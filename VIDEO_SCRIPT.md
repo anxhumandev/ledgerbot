@@ -11,7 +11,7 @@
 
 - **SAY** is your narration. Loosen it into your own voice; keep the facts.
 - **DO** is what you press. Every key also has an on-screen button, but in recording mode (`?record=1`) the on-screen controls are hidden, so use the keys.
-- **{curly braces}** = read the number the prototype shows on screen in that take. The *(about …)* values are what our test run showed, only to help you rehearse the sentence. Never say a number that isn't on screen or in the deck.
+- **Numbers** are the values the prototype shows after a reset (`R`), measured on our recording build. Two depend on timing and can differ slightly in your take: the onboarding time in Scene 02 and the number of switched offers in Scene 06. If the screen shows a different value, say the screen's value. Never say a number that isn't on screen or in the deck.
 - **Two-pass recording (strongly recommended, since you are alone):** pass 1, record the screen while you operate it, silently. Pass 2, record your voice over the edited footage. You never have to talk and press keys at the same time.
 
 ---
@@ -64,7 +64,7 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 > *(timer runs out and turns red)*
 > Now the same search, with LedgerBot.
 > *(right side, one click, green)*
-> {Rows} rows became {cards} clean cards *(about 61 → 12)*. Nothing was hidden; every alternative is one click away. It's organised the way an agent thinks.
+> Sixty-one rows became twelve clean cards. Nothing was hidden; every alternative is one click away. It's organised the way an agent thinks.
 
 ---
 
@@ -92,14 +92,14 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 **DO:** press `O`. Orange NovaBeds dots fly in and snap into clusters. Let it run to the green banner (under a minute). Stay on the wide shot.
 
 > **SAY:** This is TBO's supply graph. Every dot is a supplier record; every cluster is one real hotel.
-> A new supplier just signed: NovaBeds, {n} hotels and {m} rooms *(802 and 3,416)*. Today that means weeks of manual mapping.
+> A new supplier just signed: NovaBeds, 802 hotels and 3,416 rooms. Today that means weeks of manual mapping.
 > *(press `O`)*
-> First, LedgerBot finds candidates cheaply: by location, by name, by meaning, and by matching photos. It never compares all pairs; that cuts the work by {reduction}% and still catches {recall}% of true matches *(about 99.3% and 100%)*.
+> First, LedgerBot finds candidates cheaply: by location, by name, by meaning, and by matching photos. It never compares all pairs; that cuts the work by 99.3% and still catches 100% of the true matches.
 > Then a small learned model scores each pair in milliseconds.
 > *(orange dots snap into clusters)*
 > Each orange dot that snaps into a cluster was merged automatically. Brand-new hotels get their own spot. Anything it isn't sure about pulses amber and goes to a human. In production an LLM looks at those first; in this recording the LLM is switched off, so they go straight to review.
 > *(green banner)*
-> {Time} seconds. {Auto}% merged automatically. Zero contradictions.
+> About fifty seconds. 730 records, 91 percent, merged automatically; 71 brand-new hotels created; one sent to a human. Zero contradictions.
 
 ---
 
@@ -108,7 +108,7 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 **ON SCREEN:** the Inspector on Atlantis The Palm: golden record, a row per supplier, the explanation waterfall on the right.
 **DO:** hold on the hotel → press `N` (near-miss) → `M` (Rooms) → `A` (Activities).
 
-> **SAY:** Every merge is explainable. Here's Atlantis The Palm from {k} suppliers *(5)*: the same phone number, names {similarity} similar, {distance} metres apart *(about 157 m)*. That's why it merged.
+> **SAY:** Every merge is explainable. Here's Atlantis The Palm from five suppliers: the same phone number, identical names once the noise is cleaned up, and 157 metres apart. That's why it merged.
 > Now the hard case.
 > *(`N`: Atlantis The Palm vs Atlantis The Royal)*
 > Two Atlantis hotels: same brand, same island. A naive system merges them. LedgerBot sees different street addresses and a sub-brand conflict, Palm versus Royal, and keeps them separate.
@@ -144,7 +144,7 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 > LedgerBot then sets its own thresholds using Learn-then-Test, a conformal risk-control method that guarantees that ceiling with ninety-five percent confidence.
 > Tighter risk, more human review. Looser risk, more automation. It's a business decision, and now it comes with a guarantee.
 > *(point at the green chip)*
-> And on hotels the model has never seen: {empirical}% actual error *(about 0.34% at a 0.5% budget)*. The guarantee held.
+> And on hotels the model has never seen: 0.34 percent actual error against a 0.5 percent budget. The guarantee held.
 
 ---
 
@@ -159,7 +159,7 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 > *(`Shift+2`; red events appear; the GlobalBeds score slides)*
 > Price jumps at checkout. Nobody told LedgerBot. It notices from the bookings themselves.
 > *(hotel cards switch supplier; message appears at the bottom)*
-> And it moves {slots} offers to more reliable suppliers, on its own. The shelf heals itself.
+> And it moves about three hundred offers to more reliable suppliers, on its own. The shelf heals itself.
 > We don't show the cheapest offer. We show the one most likely to book, confirm and earn: probability of booking, times probability of confirming, times margin.
 
 ---
@@ -182,11 +182,11 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 
 > **SAY:** How does that compare with an LLM-only pipeline? We haven't run a full live LLM baseline yet, so this column is a simulated profile: the error rates are our stated assumptions for a zero-shot model judging one pair at a time, listed in our code, applied to the hardest-looking pairs of the same held-out test set. LedgerBot's column is measured.
 > *(read from the table)*
-> Under those assumptions: hotel F1 {llm F1} versus {ledgerbot F1} *(about 0.87 vs 0.91)*. Room-and-offer corner cases: {llm room F1} versus {ledgerbot room F1} *(about 0.70 vs 1.00)*. Contradictory groups: {llm violations} versus zero.
+> Under those assumptions: hotel F1 0.87 versus 0.91. Room-and-offer corner cases: 0.70 versus 1.00. Contradictory groups: 19 versus zero.
 > The point isn't the exact simulated number. It's that LedgerBot's side is measured and guaranteed, and an LLM-only design can't give you either.
 >
 > *(optional voting, `B`)* At the finale, the judges can play against it. Scan, and vote "same", "different", or "same room, different offer".
-> *(after a few pairs, press `L`)* On pairs where people disagree, LedgerBot abstains, and with one click it retrains on the votes and re-certifies its thresholds: review band {before} to {after} pairs.
+> *(after a few pairs, press `L`)* On pairs where people disagree, LedgerBot abstains, and with one click it retrains on the votes and re-certifies its thresholds; the review band started at 101 pairs, and the new size appears on screen.
 
 **Do not say:** "we ran an LLM-only pipeline", or describe a specific LLM mistake as something the LLM actually did. The corner-case carousel shows simulated answers; if it's on screen, call it "the kind of mistake we assumed".
 
@@ -213,7 +213,7 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 
 **DO:** press `A` (Impact replay), then `Space`. The two lanes race for about 12 s. Cut to the deck as the numbers settle.
 
-> **SAY:** In simulation, with the same agents and the same suppliers, the LedgerBot shelf delivers {lift}% more gross profit per search *(about 12%)*, with fewer failed bookings and fewer wrong-room incidents.
+> **SAY:** In simulation, with the same agents and the same suppliers, the LedgerBot shelf delivers 22.5 percent more gross profit per search, failed bookings drop from 91 to 42, and wrong-room incidents from 26 to 6.
 > *(cut to deck)*
 > At TBO's scale, about thirty-one and a half thousand crore of hotel bookings a year, a one percent lift in hotel look-to-book is worth about nineteen crore a year, and a tenth of a point of take rate from better offer selection is about thirty-one crore. Around fifty crore from two levers. These are illustrative; the pilot proves them.
 > The plan: a three-month shadow pilot beside today's mapping, a triggered A/B test, then every destination, sightseeing, and a clean feed for API buyers.
@@ -251,7 +251,7 @@ Drop, in this order: the six-capabilities slide; Scene 07; the voting half of Sc
 
 ## Final checklist
 - [ ] The deck's cover and titles say **LedgerBot** (the prototype does).
-- [ ] Every `{brace}` number was read off the prototype in this take.
+- [ ] Numbers spoken match the screen in this take (especially the Scene 02 time and Scene 06 switched offers).
 - [ ] "Simulated" is said for the LLM-only column, the bookings and the replay; "illustrative" for the crore figures.
 - [ ] The deck's prototype/video link is real (it was a placeholder, `example.com`).
 - [ ] Runtime between 6:00 and 10:00 after editing; subtitles burned in; audio checked on speakers and headphones.
