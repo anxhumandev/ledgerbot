@@ -22,6 +22,17 @@ const scenes = [
 ];
 const VotePage = lazy(() => import("../scenes/VotePage"));
 
+// read once at module load so StrictMode double effects cannot swallow the first-visit hint
+const SHOW_HINT = (() => {
+  try {
+    const seen = localStorage.getItem("tessera.hinted") === "1";
+    localStorage.setItem("tessera.hinted", "1");
+    return !seen;
+  } catch {
+    return true;
+  }
+})();
+
 function useRecordMode() {
   useEffect(() => {
     if (!RECORD_MODE) return;
@@ -72,7 +83,9 @@ function StageApp() {
       if (m && parseInt(m[1], 10) !== useApp.getState().scene) useApp.getState().setScene(parseInt(m[1], 10));
     };
     window.addEventListener("hashchange", onHash);
-    return () => { clearInterval(id); window.removeEventListener("hashchange", onHash); };
+    // one-time hint for first-time viewers (never in recordings)
+    const hint = !RECORD_MODE && SHOW_HINT ? setTimeout(() => useApp.getState().showToast("Press → for the next scene, P for this scene's keys, or use the controls bottom-right"), 2500) : undefined;
+    return () => { clearInterval(id); clearTimeout(hint); window.removeEventListener("hashchange", onHash); };
   }, []);
   useEffect(() => {
     const on = async (e: KeyboardEvent) => {

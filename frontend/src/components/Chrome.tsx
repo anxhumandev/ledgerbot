@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { SCENES, useApp } from "../app/store";
 import { Kbd, T } from "../design/primitives";
-import { formatINR } from "../lib/format";
+import { formatINR, RECORD_MODE } from "../lib/format";
 
 export function TopBar() {
   const scene = useApp((s) => s.scene);
@@ -40,6 +41,48 @@ export function Footer() {
   return (
     <div className="absolute bottom-0 left-0 right-0 h-7 px-16 flex items-center text-[12px] text-ink-3 z-20">
       Synthetic demo data · prices and policies are fictional · Tessera prototype for TBO VoyageHack 4.0
+      {!RECORD_MODE && <SceneNav />}
+    </div>
+  );
+}
+
+/** Visible navigation for people who do not know the hotkeys. Hidden with ?record=1. */
+function SceneNav() {
+  const scene = useApp((s) => s.scene);
+  const { setScene, next, prev, togglePresenter } = useApp.getState();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => setOpen(false), [scene]);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", esc);
+    return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", esc); };
+  }, [open]);
+  const btn = "h-6 rounded-full border border-line bg-surface text-ink-2 hover:bg-surface-2 hover:text-ink disabled:opacity-30 transition";
+  return (
+    <div ref={ref} className="ml-auto relative flex items-center gap-1.5">
+      <button className={`${btn} w-7`} onClick={prev} disabled={scene === 0} aria-label="Previous scene" title="Previous scene (←)">‹</button>
+      <button className={`${btn} px-3 text-[12px]`} onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
+        <span className="font-mono text-ink-3 mr-1.5">{SCENES[scene].id}</span>{SCENES[scene].title} ▴
+      </button>
+      <button className={`${btn} w-7`} onClick={next} disabled={scene === SCENES.length - 1} aria-label="Next scene" title="Next scene (→)">›</button>
+      <button className={`${btn} px-2.5 text-[12px] ml-1`} onClick={togglePresenter} title="Show this scene's keys (P)">Keys</button>
+      <AnimatePresence>
+        {open && (
+          <motion.div role="menu" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={T}
+            className="absolute bottom-8 right-0 w-[260px] rounded-2xl border border-line bg-surface shadow-card p-1.5 z-50">
+            {SCENES.map((s, i) => (
+              <button key={s.id} role="menuitem" onClick={() => { setScene(i); setOpen(false); }}
+                className={`w-full text-left flex items-center gap-3 px-3 py-1.5 rounded-xl text-[13px] ${i === scene ? "bg-lagoon-soft text-lagoon" : "text-ink-2 hover:bg-surface-2"}`}>
+                <span className="font-mono text-[11px] text-ink-3 w-5">{s.id}</span>{s.title}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

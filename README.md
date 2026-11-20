@@ -141,7 +141,7 @@ Press `R` before every take: it resets simulation, onboarding, votes, sabotage, 
 | 08 Arena | A: benchmark board vs the cached LLM-only baseline, corner cases, reliability diagram. B: phones scan the QR and vote; `Space` pushes a pair / reveals; `L` retrains on the votes. | `A` `B`, `Space`, `L` |
 | 09 Impact | A: 50,000 simulated searches through both shelves at high speed. B: the production architecture draws itself step by step. | `A` `B`, `Space` |
 
-`P` toggles a presenter overlay with the scene's keys. Record with `?record=1` (hides the cursor after 2 s idle).
+Move between scenes with `→` / `←`, or with the controls at the bottom right (‹ ›, a scene menu, and **Keys**). `P` toggles a presenter overlay with the scene's keys. Record with `?record=1`: it hides the on-screen controls and the cursor after 2 s idle.
 
 ---
 

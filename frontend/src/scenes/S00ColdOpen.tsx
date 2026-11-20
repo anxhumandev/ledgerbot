@@ -68,7 +68,7 @@ export default function ColdOpen() {
                 transition={{ ...T, duration: REDUCE_MOTION ? 0 : 0.55, delay: REDUCE_MOTION ? 0 : 0.55 }}
                 style={{ left: "calc(50% - 430px)", transformOrigin: "top center" }} className="absolute top-6 w-[860px] bg-surface border border-line rounded-card shadow-card overflow-hidden">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...T, delay: REDUCE_MOTION ? 0 : 0.85 }} className="flex">
-                  <Photo src={data.hotel.hero} name={data.hotel.name} className="w-[300px] h-[300px]" />
+                  <Photo src={data.hotel.hero} name={data.hotel.name} className="w-[300px] min-h-[300px] self-stretch flex-none" />
                   <div className="flex-1 p-8">
                     <Caption>{data.hotel.neighbourhood} · {"★".repeat(data.hotel.stars || 0)}</Caption>
                     <div className="font-serif text-[40px] leading-tight mt-1">{data.hotel.name}</div>
