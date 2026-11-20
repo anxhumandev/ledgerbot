@@ -1,7 +1,7 @@
 .PHONY: setup data train baseline dev reset teach test
 
 PYTHON_BOOTSTRAP ?= python3
-PYTHON := $(abspath .venv/bin/python)
+PYTHON := $(abspath $(if $(wildcard .venv/Scripts/python.exe),.venv/Scripts/python.exe,.venv/bin/python))
 PORT_BACK ?= 8100
 
 setup:

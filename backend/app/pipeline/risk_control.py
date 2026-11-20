@@ -117,15 +117,23 @@ def risk_curve(cal_raw, cal_y, cal_blocks, test_raw, test_y, test_blocks, alphas
     return [risk_row(a, cal_raw, cal_y, cal_blocks, test_raw, test_y, test_blocks, rej, calibrate) for a in alphas]
 
 
+def effective_reject(tau_accept: float, tau_reject: float) -> float:
+    """Auto-merge wins where the two certified regions overlap, so the reject threshold actually in force
+    never exceeds the accept threshold. Reporting the clamped value keeps the displayed bands coherent."""
+    return min(tau_reject, tau_accept)
+
+
 def risk_row(a, cal_raw, cal_y, cal_blocks, test_raw, test_y, test_blocks, rej, calibrate=None) -> dict:
     acc = ltt_accept(cal_raw, cal_y, a, blocks=cal_blocks)
-    ev = evaluate_on(test_raw, test_y, acc["tau"], rej["tau"], test_blocks)
+    tau_r = effective_reject(acc["tau"], rej["tau"])
+    ev = evaluate_on(test_raw, test_y, acc["tau"], tau_r, test_blocks)
 
     def cal_p(t):
         return float(calibrate(np.array([t]))[0]) if (calibrate is not None and np.isfinite(t)) else None
     return {
-        "alpha": a, "tau_accept_raw": acc["tau"], "tau_reject_raw": rej["tau"],
-        "tau_accept": cal_p(acc["tau"]), "tau_reject": cal_p(rej["tau"]),
+        "alpha": a, "tau_accept_raw": acc["tau"], "tau_reject_raw": tau_r, "tau_reject_certified_raw": rej["tau"],
+        "bands_overlap": bool(rej["tau"] >= acc["tau"]),
+        "tau_accept": cal_p(acc["tau"]), "tau_reject": cal_p(tau_r),
         "certifiable": acc["certifiable"], "n_min": acc["n_min"], "cal_units": acc["n_units"],
         "cal_n_accepted": acc["n_accepted"], "cal_false_merges": acc["false_merges"], "cal_ucb": acc["ucb"],
         "automation": ev["automation"], "auto_accept_rate": ev["auto_accept"] / max(1, ev["n"]),

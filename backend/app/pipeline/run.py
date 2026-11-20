@@ -146,6 +146,7 @@ def build(verbose: bool = True) -> dict:
     alpha = config.DEFAULT_ALPHA
     acc = risk_control.ltt_accept(cal_raw, yc, alpha, blocks=cal_blocks)
     rej = risk_control.ltt_reject(cal_raw, yc, config.DEFAULT_BETA)
+    rej["tau"] = risk_control.effective_reject(acc["tau"], rej["tau"])
     band = risk_control.bands(raw, acc["tau"], rej["tau"])
 
     # ---------------------------------------------------------------- decisions
