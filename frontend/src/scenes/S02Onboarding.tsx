@@ -186,7 +186,7 @@ export default function Onboarding() {
             <div className="font-serif text-[30px] mt-3 leading-tight">NovaBeds</div>
             <div className="text-[15px] text-ink-2 mt-1 font-mono">{groupIN(feed.hotels)} hotels · {groupIN(feed.rooms)} rooms</div>
             <div className="text-[13px] text-ink-3 mt-1">{feed.cities.length} cities · never seen before</div>
-            <div className="mt-4 text-[13px] text-ink-3">{status === "idle" ? <>Drop the feed or press <Kbd>O</Kbd></> : status === "running" ? "Onboarding…" : "Live"}</div>
+            <div className="mt-4 text-[13px] text-ink-3">{status === "idle" ? <span className="inline-flex items-center gap-2 rounded-full bg-lagoon text-white px-3 py-1.5 text-[13px] font-medium">Click to onboard NovaBeds <Kbd>O</Kbd></span> : status === "running" ? "Onboarding…" : "Live"}</div>
           </motion.div>
           <Card className="p-4 flex-1 min-h-0 overflow-hidden">
             <Caption>Latest decisions</Caption>

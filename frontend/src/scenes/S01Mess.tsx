@@ -1,6 +1,6 @@
 import { motion, useAnimationControls } from "framer-motion";
 import { useState } from "react";
-import { Caption, Card, Chip, Kbd, Photo, Skeleton, SupplierChip, T, Timer, cx } from "../design/primitives";
+import { Button, Caption, Card, Chip, Kbd, Photo, Skeleton, SupplierChip, T, Timer, cx } from "../design/primitives";
 import { formatINR } from "../lib/format";
 import { useFetch, useHotkeys } from "../lib/hooks";
 
@@ -20,8 +20,8 @@ export default function Mess() {
     setTimeout(() => setRuns((r) => (r[side].startedAt && !r[side].stoppedAt && Date.now() - r[side].startedAt! >= LIMIT * 1000 - 50
       ? { ...r, [side]: { ...r[side], stoppedAt: r[side].startedAt! + LIMIT * 1000, result: "timeout" } } : r)), LIMIT * 1000);
   };
-  useHotkeys({ "1": () => start("left"), "2": () => start("right"),
-    "0": () => setRuns({ left: { startedAt: null, stoppedAt: null, result: null }, right: { startedAt: null, stoppedAt: null, result: null } }) });
+  const clear = () => setRuns({ left: { startedAt: null, stoppedAt: null, result: null }, right: { startedAt: null, stoppedAt: null, result: null } });
+  useHotkeys({ "1": () => start("left"), "2": () => start("right"), "0": clear });
 
   const attempt = (side: Side, ok: boolean, id: string) => {
     const r = runs[side];
@@ -52,12 +52,12 @@ export default function Mess() {
             <div className="text-[20px] font-medium mt-0.5">{tgt?.label}</div>
           </div>
           <div className="ml-auto flex items-center gap-10">
-            <div className="flex items-center gap-3"><Kbd>1</Kbd><span className="text-[14px] text-ink-3">Left</span><Timer {...runs.left} limit={LIMIT} tone={runs.left.result === "ok" ? "var(--sage)" : runs.left.result === "timeout" ? "var(--clay)" : undefined} /></div>
-            <div className="flex items-center gap-3"><Kbd>2</Kbd><span className="text-[14px] text-ink-3">Right</span><Timer {...runs.right} limit={LIMIT} tone={runs.right.result === "ok" ? "var(--sage)" : undefined} /></div>
+            <div className="flex items-center gap-3"><Button variant="soft" onClick={() => start("left")} kbd="1">Start left</Button><Timer {...runs.left} limit={LIMIT} tone={runs.left.result === "ok" ? "var(--sage)" : runs.left.result === "timeout" ? "var(--clay)" : undefined} /></div>
+            <div className="flex items-center gap-3"><Button variant="soft" onClick={() => start("right")} kbd="2">Start right</Button><Timer {...runs.right} limit={LIMIT} tone={runs.right.result === "ok" ? "var(--sage)" : undefined} /></div>
           </div>
         </Card>
         <Card className="px-6 py-4 w-[420px]">
-          <Caption>Result</Caption>
+          <div className="flex items-center justify-between"><Caption>Result</Caption><Button variant="ghost" onClick={clear} kbd="0" className="!py-1 !px-3 !text-[12px]">Clear</Button></div>
           <div className="mt-1 text-[18px] font-mono">
             <span className={runs.left.result === "timeout" ? "text-[color:var(--clay-ink)]" : "text-ink"}>Left: {res(runs.left)}</span>
             <span className="text-ink-3"> / </span>

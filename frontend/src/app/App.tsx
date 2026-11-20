@@ -1,10 +1,11 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Component, lazy, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
-import { Footer, PresenterOverlay, Rail, TopBar } from "../components/Chrome";
+import { EdgeArrows, Footer, PresenterOverlay, Rail, TopBar } from "../components/Chrome";
 import { Skeleton, Stage, T, ToastHost } from "../design/primitives";
 import { api, post } from "../lib/api";
 import { RECORD_MODE } from "../lib/format";
 import { typing } from "../lib/hooks";
+import { resetDemo } from "../lib/demo";
 import { connectWS } from "../lib/ws";
 import { useApp } from "./store";
 
@@ -68,7 +69,6 @@ class SceneBoundary extends Component<{ children: ReactNode }, { error: boolean 
 }
 
 function StageApp() {
-  const resetting = useRef(false);
   const { scene, epoch, presenter, toast } = useApp();
   const [health, setHealth] = useState<any>(null);
   useRecordMode();
@@ -93,19 +93,7 @@ function StageApp() {
       if (e.key === "ArrowRight" && !e.shiftKey) useApp.getState().next();
       else if (e.key === "ArrowLeft" && !e.shiftKey) useApp.getState().prev();
       else if (e.key === "p" || e.key === "P") useApp.getState().togglePresenter();
-      else if (e.key === "r" || e.key === "R") {
-        if (e.repeat || resetting.current) return;
-        resetting.current = true;
-        try {
-          await post("/demo/reset");
-          useApp.getState().bumpEpoch();
-          useApp.getState().showToast("Demo state reset");
-        } catch {
-          useApp.getState().showToast("Reset failed. Check the backend and press R to retry.", "clay");
-        } finally {
-          resetting.current = false;
-        }
-      }
+      else if ((e.key === "r" || e.key === "R") && !e.repeat) await resetDemo();
     };
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
@@ -132,6 +120,7 @@ function StageApp() {
           </AnimatePresence>
         )}
       </div>
+      <EdgeArrows />
       <Footer />
       <PresenterOverlay />
       <ToastHost toast={toast} />

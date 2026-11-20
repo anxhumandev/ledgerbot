@@ -2,6 +2,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { SCENES, useApp } from "../app/store";
 import { Kbd, T } from "../design/primitives";
+import { ChevronLeft, ChevronRight, ChevronUp, Keyboard, RotateCcw } from "lucide-react";
+import { resetDemo } from "../lib/demo";
 import { formatINR, RECORD_MODE } from "../lib/format";
 
 export function TopBar() {
@@ -61,15 +63,25 @@ function SceneNav() {
     window.addEventListener("keydown", esc);
     return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", esc); };
   }, [open]);
-  const btn = "h-6 rounded-full border border-line bg-surface text-ink-2 hover:bg-surface-2 hover:text-ink disabled:opacity-30 transition";
+  const base = "h-6 inline-flex items-center gap-1 rounded-full border text-[12px] disabled:opacity-30 transition";
+  const btn = `${base} border-line bg-surface text-ink-2 hover:bg-surface-2 hover:text-ink`;
+  const primary = `${base} border-lagoon bg-lagoon text-white hover:brightness-110`;
+  const last = scene === SCENES.length - 1;
   return (
     <div ref={ref} className="ml-auto relative flex items-center gap-1.5">
-      <button className={`${btn} w-7`} onClick={prev} disabled={scene === 0} aria-label="Previous scene" title="Previous scene (←)">‹</button>
-      <button className={`${btn} px-3 text-[12px]`} onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
-        <span className="font-mono text-ink-3 mr-1.5">{SCENES[scene].id}</span>{SCENES[scene].title} ▴
+      <button className={`${btn} px-2.5`} onClick={() => resetDemo()} title="Reset all demo state (R)"><RotateCcw size={12} />Reset</button>
+      <span className="w-px h-4 bg-line mx-1" />
+      <button className={`${btn} pl-1.5 pr-2.5`} onClick={prev} disabled={scene === 0} aria-label="Previous scene" title="Previous scene (←)">
+        <ChevronLeft size={14} />Back
       </button>
-      <button className={`${btn} w-7`} onClick={next} disabled={scene === SCENES.length - 1} aria-label="Next scene" title="Next scene (→)">›</button>
-      <button className={`${btn} px-2.5 text-[12px] ml-1`} onClick={togglePresenter} title="Show this scene's keys (P)">Keys</button>
+      <button className={`${btn} px-3`} onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} title="Jump to any scene">
+        <span className="font-mono text-ink-3">{SCENES[scene].id}</span>{SCENES[scene].title}<ChevronUp size={12} />
+      </button>
+      <button className={`${last ? btn : primary} pl-2.5 pr-1.5`}
+        onClick={next} disabled={last} aria-label="Next scene" title="Next scene (→)">
+        {last ? "Last scene" : <>Next: {SCENES[scene + 1].title}</>}<ChevronRight size={14} />
+      </button>
+      <button className={`${btn} px-2.5 ml-1`} onClick={togglePresenter} title="Show this scene's keys (P)"><Keyboard size={12} />Keys</button>
       <AnimatePresence>
         {open && (
           <motion.div role="menu" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={T}
@@ -84,6 +96,30 @@ function SceneNav() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** Large previous/next arrows in the stage's side gutters, so navigation is obvious without the keyboard. */
+export function EdgeArrows() {
+  const scene = useApp((s) => s.scene);
+  const presenter = useApp((s) => s.presenter);
+  if (RECORD_MODE) return null;
+  const { next, prev } = useApp.getState();
+  const base = "absolute top-1/2 -translate-y-1/2 z-30 w-12 h-24 rounded-full flex items-center justify-center " +
+    "border shadow-card transition hover:scale-105";
+  const back = `${base} bg-surface/80 border-line text-ink-3 opacity-70 hover:opacity-100 hover:text-lagoon`;
+  const fwd = `${base} bg-surface border-lagoon/40 text-lagoon opacity-95 hover:bg-lagoon hover:text-white hover:opacity-100`;
+  return (
+    <>
+      {scene > 0 && !presenter && (
+        <button className={`${back} left-2`} onClick={prev} aria-label={`Previous scene: ${SCENES[scene - 1].title}`}
+          title={`Back: ${SCENES[scene - 1].title} (←)`}><ChevronLeft size={30} /></button>
+      )}
+      {scene < SCENES.length - 1 && (
+        <button className={`${fwd} right-2`} onClick={next} aria-label={`Next scene: ${SCENES[scene + 1].title}`}
+          title={`Next: ${SCENES[scene + 1].title} (→)`}><ChevronRight size={30} /></button>
+      )}
+    </>
   );
 }
 

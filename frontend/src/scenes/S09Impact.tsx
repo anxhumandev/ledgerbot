@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Caption, Card, Chip, Kbd, SceneHeader, T, Ticker, Toggle } from "../design/primitives";
+import { Button, Caption, Card, Chip, Kbd, SceneHeader, T, Ticker, Toggle } from "../design/primitives";
 import { api, post } from "../lib/api";
 import { formatINR, groupIN } from "../lib/format";
 import { useHotkeys } from "../lib/hooks";
@@ -17,17 +17,16 @@ export default function Impact() {
     if (m.type === "tick") setReplay(m.payload);
     if (m.type === "done") { setReplay(m.payload); setRunning(false); }
   });
-  const space = () => {
-    if (view === "A") { if (!running) post("/sim/replay", { n: 50000 }); }
-    else setStep((s) => Math.min(STEPS.length, s + 1));
-  };
+  const runReplay = () => { if (!running) post("/sim/replay", { n: 50000 }); };
+  const nextStep = () => setStep((s) => Math.min(STEPS.length, s + 1));
+  const space = () => (view === "A" ? runReplay() : nextStep());
   useHotkeys({ a: () => setView("A"), b: () => setView("B"), " ": space });
   return (
     <div className="h-full flex flex-col">
       <SceneHeader headline="From prototype to production at TBO scale."
         subline={view === "A" ? "Replay simulated agent searches through two shelves. Same agents, same suppliers, same hidden reliability." : "Where each piece runs, and why the LLM never sits on the search path."}
         right={<Toggle value={view} onChange={(v) => setView(v)} options={[{ value: "A", label: "Impact replay" }, { value: "B", label: "Architecture" }]} />} />
-      <div className="flex-1 min-h-0">{view === "A" ? <Replay r={replay} running={running} /> : <Architecture step={step} />}</div>
+      <div className="flex-1 min-h-0">{view === "A" ? <Replay r={replay} running={running} onRun={runReplay} /> : <Architecture step={step} onNext={nextStep} onAll={() => setStep(STEPS.length)} onRestart={() => setStep(0)} />}</div>
     </div>
   );
 }
@@ -41,7 +40,7 @@ const LANES = [
   { key: "wrong_room", label: "Wrong-room incidents", fmt: (v: number) => groupIN(v) },
 ];
 
-function Replay({ r, running }: { r: any; running: boolean }) {
+function Replay({ r, running, onRun }: { r: any; running: boolean; onRun: () => void }) {
   const arms = r?.arms;
   return (
     <div className="h-full flex flex-col gap-5">
@@ -62,7 +61,7 @@ function Replay({ r, running }: { r: any; running: boolean }) {
       ))}
       <div className="flex-1 flex items-center justify-center">
         <AnimatePresence mode="wait">
-          {!r && !running && <motion.div key="hint" exit={{ opacity: 0 }} className="text-[20px] text-ink-3">Press <Kbd>Space</Kbd> to replay 50,000 searches at ~1000× speed.</motion.div>}
+          {!r && !running && <motion.div key="hint" exit={{ opacity: 0 }} className="flex flex-col items-center gap-3"><Button onClick={onRun} kbd="Space" className="!text-[18px] !px-6 !py-3">Replay 50,000 searches</Button><span className="text-[14px] text-ink-3">simulated, at about 1000× speed</span></motion.div>}
           {r && (
             <motion.div key="fin" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T} className="text-center">
               <div className="font-mono text-[72px] leading-none text-[color:var(--saffron-ink)]">
@@ -76,6 +75,7 @@ function Replay({ r, running }: { r: any; running: boolean }) {
                   <span className="text-[12px] text-ink-3">= {r.formula}</span>
                 </div>
               )}
+              {!running && <div className="mt-4"><Button variant="ghost" onClick={onRun} kbd="Space">Run the replay again</Button></div>}
             </motion.div>
           )}
         </AnimatePresence>
@@ -100,7 +100,7 @@ const STEPS = [
 const EDGES: [number, number][] = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [5, 8], [7, 8], [8, 9]];
 const TONE: Record<string, [string, string]> = { iris: ["var(--iris-soft)", "var(--iris)"], amber: ["var(--amber-soft)", "var(--amber)"], saffron: ["var(--saffron-soft)", "var(--saffron)"], sage: ["var(--sage-soft)", "var(--sage)"] };
 
-function Architecture({ step }: { step: number }) {
+function Architecture({ step, onNext, onAll, onRestart }: { step: number; onNext: () => void; onAll: () => void; onRestart: () => void }) {
   const box = (id: number) => STEPS.find((s) => s.id === id)!;
   const c = (s: any, side: "r" | "l" | "b" | "t") => side === "r" ? [s.x + s.w, s.y + s.h / 2] : side === "l" ? [s.x, s.y + s.h / 2] : side === "b" ? [s.x + s.w / 2, s.y + s.h] : [s.x + s.w / 2, s.y];
   const path = (a: any, b: any) => {
@@ -132,7 +132,9 @@ function Architecture({ step }: { step: number }) {
       <div className="absolute left-0 bottom-0 flex gap-3 items-center">
         {step >= 9 && <Chip variant="saffron">Added to search path: &lt; 5 ms p95</Chip>}
         {step >= 10 && <Chip variant="lagoon">Shadow mode → triggered A/B (only searches where rankings differ) → ramp</Chip>}
-        {step < STEPS.length && <span className="text-[14px] text-ink-3"><Kbd>Space</Kbd> draw the next step ({step}/{STEPS.length})</span>}
+        {step < STEPS.length && <Button onClick={onNext} kbd="Space">{step === 0 ? "Start drawing" : "Next step"} ({step}/{STEPS.length})</Button>}
+        {step < STEPS.length && <Button variant="ghost" onClick={onAll}>Draw all</Button>}
+        {step > 0 && <Button variant="ghost" onClick={onRestart}>Restart</Button>}
       </div>
     </div>
   );
