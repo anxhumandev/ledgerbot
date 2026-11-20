@@ -42,11 +42,19 @@ async def lifespan(app: FastAPI):
         from app.pipeline.blocking import embedder
         await asyncio.to_thread(embedder)  # warm the encoder so the first Break-It trace is fast
     except Exception as e:  # keep serving /health with the error message
+        DEMO.ready = False
         DEMO.error = f"{type(e).__name__}: {e}. Run the data + train steps first."
         traceback.print_exc()
     pump = asyncio.create_task(_cost_pump())
-    yield
-    pump.cancel()
+    try:
+        yield
+    finally:
+        from app.services.live import ONBOARDER
+        from app.services.simulator import REPLAY, SIM
+        jobs = [task for task in (ONBOARDER.task, SIM.task, REPLAY.task, pump) if task]
+        for task in jobs:
+            task.cancel()
+        await asyncio.gather(*jobs, return_exceptions=True)
 
 
 app = FastAPI(title="Tessera", default_response_class=ORJSONResponse, lifespan=lifespan)

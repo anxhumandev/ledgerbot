@@ -626,7 +626,7 @@ def gen_photos(hotels):
         lst = []
         for k in range(n):
             tag = ph.TAGS[k % len(ph.TAGS)]
-            fname = f"{h['hotel_id']}_{k:02d}_{tag}.jpg"
+            fname = f"{SEED}_{h['hotel_id']}_{k:02d}_{tag}.jpg"
             path = config.IMG_BASE_DIR / fname
             if not path.exists():
                 ph.save_jpeg(ph.make_base_image(f"{SEED}:{h['hotel_id']}:{k}", tag), path, 88)
@@ -645,7 +645,7 @@ def materialize_variants(records):
         for i, p in enumerate(rec["photos"]):
             base = p["base"]
             rng = random.Random(f"{SEED}:var:{rec['record_id']}:{base['file']}")
-            vname = f"{rec['supplier']}_{rec['record_id'].replace('/', '_')}_{i:02d}_{base['tag']}.jpg"
+            vname = f"{rec['supplier']}_{rec['record_id'].replace('/', '_')}_{base['file']}"
             vpath = config.IMG_VAR_DIR / vname
             if base["file"] not in cache:
                 cache[base["file"]] = Image.open(config.IMG_BASE_DIR / base["file"]).convert("RGB")

@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import math
 import time
+import copy
 from collections import defaultdict
 
 import numpy as np
@@ -11,7 +12,8 @@ import orjson
 
 from app import config
 from app.demo import DEMO
-from app.pipeline import adjudicator, blocking, normalize, rooms
+from app.pipeline import adjudicator, blocking, normalize, rooms, offers, ranking
+from app.pipeline.enrich import neighbourhood_of
 from app.pipeline.cost import METER
 from app.pipeline.features import distinguishing_detail, haversine_m, pair_features
 from app.pipeline.matcher import explain
@@ -68,11 +70,11 @@ def presets() -> list[dict]:
     addr_r = s1_of(addr["tessera_id"])
     hil = next(h for h in hotels.values() if h["name"] == "Hilton Dubai Jumeirah")
     hil_r = s1_of(hil["tessera_id"])
-    lat8, lng8 = addr_r["lat"] + 500 / 111_320.0, addr_r["lng"]
+    lat8, lng8 = addr_r["lat"] + 800 / 111_320.0, addr_r["lng"]
     return [
         {"id": "misspelled", "label": "Misspelled", "record": {"name": "Atlantiss The Plam Resortt", "address": palm["address"],
          "lat": palm["lat"], "lng": palm["lng"], "phone": palm["phone"], "room_name": "Deluxe King Room – Sea View"}},
-        {"id": "wrong_pin", "label": "Wrong pin (500 m off)", "record": {"name": addr_r["name"], "address": None,
+        {"id": "wrong_pin", "label": "Wrong pin (800 m off)", "record": {"name": addr_r["name"], "address": None,
          "lat": round(lat8, 6), "lng": lng8, "phone": None, "room_name": "Deluxe King Burj Khalifa View"}},
         {"id": "sister", "label": "Sister property", "record": {"name": "Atlantis Royal Resort Dubai", "address": None,
          "lat": royal["lat"], "lng": royal["lng"], "phone": None, "room_name": "Suite King Sea View"}},
@@ -93,6 +95,8 @@ def trace(record: dict) -> dict:
         rec["lat"] = float(rec["lat"]) if rec["lat"] not in (None, "") else None
         rec["lng"] = float(rec["lng"]) if rec["lng"] not in (None, "") else None
     except (TypeError, ValueError):
+        rec["lat"] = rec["lng"] = None
+    if not all(isinstance(rec[k], float) and math.isfinite(rec[k]) and abs(rec[k]) <= limit for k, limit in (("lat", 90), ("lng", 180))):
         rec["lat"] = rec["lng"] = None
     n = normalize.normalize_hotel(rec)
     room = normalize.parse_room(record.get("room_name") or "") if record.get("room_name") else None
@@ -116,7 +120,7 @@ def trace(record: dict) -> dict:
         r = rows[k]
         other = st["norms"][r]
         ex = explain(X[k], DEMO.matcher.contributions(X[k:k + 1])[0], n, other, float(p[k]), distinguishing_detail(n, other))
-        cand_out.append({"tessera_id": tid, "name": DEMO.hotels[tid]["name"], "record_name": DEMO.rec_by_id[other["record_id"]]["name"],
+        cand_out.append({"tessera_id": tid, "name": DEMO.hotels[tid]["name"], "record_id": other["record_id"], "record_name": DEMO.rec_by_id[other["record_id"]]["name"],
                          "supplier": other["supplier"], "sources": sorted(cands[r]), "p": float(p[k]), "raw": float(raw[k]),
                          "band": DEMO.band_of(float(raw[k])), "explain": ex,
                          "dist_m": None if rec["lat"] is None else round(haversine_m(rec["lat"], rec["lng"], other["lat"], other["lng"]))})
@@ -128,7 +132,7 @@ def trace(record: dict) -> dict:
             decision = {"route": "auto_merge", "tessera_id": best["tessera_id"], "name": best["name"], "p": best["p"],
                         "reason": f"Merged into {best['name']} (p = {best['p']:.3f} ≥ τ = {DEMO.current_risk['tau_accept']:.3f})."}
         elif best["band"] == "uncertain":
-            item = {"pair_id": f"BREAKIT|{best['tessera_id']}", "a": rec, "b": DEMO.rec_by_id[DEMO.hotels[best["tessera_id"]]["members"][0]],
+            item = {"pair_id": f"BREAKIT|{best['tessera_id']}", "a": rec, "b": DEMO.rec_by_id[best["record_id"]],
                     "p": best["p"], "subbrand_conflict": any(i["group"] == "subbrand" and i["value"] < 0 for i in best["explain"]["items"])}
             v = adjudicator.adjudicate([item]).get(item["pair_id"])
             if v and v["route"] == "llm":
@@ -142,7 +146,7 @@ def trace(record: dict) -> dict:
             decision["p"] = best["p"]
     # room match inside the chosen hotel
     room_match = None
-    if room and decision.get("tessera_id") and decision["route"] in ("auto_merge", "llm", "review"):
+    if room and decision.get("tessera_id") and (decision["route"] == "auto_merge" or decision.get("verdict") == "same"):
         h = DEMO.hotels[decision["tessera_id"]]
         ident = normalize.room_identity(room)
         best_g, best_s = None, -1e9
@@ -178,6 +182,43 @@ def graph(city: str = "dubai") -> dict:
 
 
 # ---------------------------------------------------------------- onboarding
+def integrate_rooms(hotel, supplier_rooms, raw_offers):
+    """Reconcile the incoming inventory with the hotel's existing physical rooms and slots."""
+    if not supplier_rooms:
+        return
+    groups = hotel.get("rooms", [])
+    members = [m for g in groups for m in g["members"]]
+    incoming = [offers.normalize_offer(o) for o in raw_offers]
+    raw_names = {r["supplier_room_id"]: r["room_name"] for r in supplier_rooms}
+    by_identity = {tuple(sorted(normalize.room_identity(normalize.parse_room(r["room_name"])).items())): r["supplier_room_id"] for r in supplier_rooms}
+    # Retain the original pipeline's corrections of raw supplier room IDs.
+    assigned = {}
+    for g in groups:
+        by_supplier = {m["supplier"]: m["supplier_room_id"] for m in g["members"]}
+        for s in g["slots"]:
+            for o in s["offers"]:
+                assigned[o["offer_id"]] = by_supplier[o["supplier"]]
+    for o in incoming:
+        ident = normalize.room_identity(normalize.parse_room(o["room_name"]))
+        assigned[o["offer_id"]] = by_identity.get(tuple(sorted(ident.items())), o["supplier_room_id"])
+        o["raw_room_name"] = raw_names.get(o["supplier_room_id"], o["room_name"])
+    inventory = [o for g in groups for s in g["slots"] for o in s["offers"]] + incoming
+    combined = rooms.match_rooms(members + supplier_rooms)
+    group_index = {m["supplier_room_id"]: i for i, g in enumerate(combined) for m in g["members"]}
+    slots = defaultdict(list)
+    for o in inventory:
+        gi = group_index[assigned[o["offer_id"]]]
+        slots[offers.slot_key(gi, o)].append({**o, "group": gi})
+    for g in combined:
+        g["slots"] = []
+    for (gi, board, refundable, occupancy, nights), entries in sorted(slots.items()):
+        hours = max((o.get("cancel_hours") or 0 for o in entries), default=0)
+        combined[gi]["slots"].append({"key": [board, refundable, occupancy, nights], "board": board,
+                                      "refundable": refundable, "offers": entries, "label": offers.slot_label(board, refundable, hours)})
+    hotel["rooms"] = combined
+    hotel["n_offers"] = len(inventory)
+
+
 class Onboarder:
     def __init__(self):
         self.task: asyncio.Task | None = None
@@ -192,18 +233,30 @@ class Onboarder:
             return {"status": "running"}
         if DEMO.onboarding.get("status") == "done":
             return {"status": "done"}
-        self.task = asyncio.create_task(self._run())
+        self.task = asyncio.create_task(self._guarded_run())
         return {"status": "started"}
 
     def cancel(self):
         if self.task and not self.task.done():
             self.task.cancel()
 
+    async def _guarded_run(self):
+        try:
+            await self._run()
+        except Exception as exc:
+            DEMO.onboarding = {**DEMO.onboarding, "status": "error", "error": str(exc)}
+            await HUB.broadcast("pipeline", "error", DEMO.onboarding)
+
     async def _run(self):
         loop = asyncio.get_running_loop()
         t_start = time.time()
         feed = orjson.loads((config.WORLD_DIR / "novabeds_feed.json").read_bytes())
         truth = orjson.loads((config.WORLD_DIR / "truth.json").read_bytes())["hotel_of_record"]
+        feed_rooms, feed_offers = defaultdict(list), defaultdict(list)
+        for room in feed["rooms"]:
+            feed_rooms[room["record_id"]].append(room)
+        for offer in feed["offers"]:
+            feed_offers[offer["record_id"]].append(offer)
         recs = feed["hotels"]
         # interleave Dubai records so the graph keeps moving while counters cover every city
         dubai = [r for r in recs if normalize.canon_city(r["city"]) == "dubai"]
@@ -220,6 +273,7 @@ class Onboarder:
         c = {"total": len(ordered), "parsed": 0, "candidates": 0, "candidate_true": 0, "true_pairs": 0, "scored": 0,
              "auto_merge": 0, "llm": 0, "review": 0, "new_cluster": 0, "clustered": 0, "violations": 0,
              "false_merges": 0, "elapsed": 0.0}
+        DEMO.onboarding.update(counters=c, alpha=DEMO.alpha)
         await HUB.broadcast("pipeline", "start", {"counters": c, "feed": self.feed_summary()})
         norms = [normalize.normalize_hotel(r) for r in ordered]
         c["parsed"] = len(norms)
@@ -254,22 +308,27 @@ class Onboarder:
                 route, reason = "review", "NovaBeds already mapped to this hotel (possible duplicate listing)"
             elif band == "uncertain":
                 other_rec = DEMO.rec_by_id.get(DEMO.state["norms"][rows[best_k]]["record_id"])
-                v = adjudicator.adjudicate([{"pair_id": f"{r['record_id']}|{best_tid}", "a": r, "b": other_rec,
-                                             "p": float(p[best_k]), "subbrand_conflict": bool(X[best_k][7])}]).get(f"{r['record_id']}|{best_tid}")
+                verdicts = await asyncio.to_thread(adjudicator.adjudicate, [{"pair_id": f"{r['record_id']}|{best_tid}", "a": r, "b": other_rec,
+                                             "p": float(p[best_k]), "subbrand_conflict": bool(X[best_k][7])}])
+                v = verdicts.get(f"{r['record_id']}|{best_tid}")
                 if v and v["route"] == "llm":
                     route, reason = ("llm_merge" if v["verdict"] == "same" else "llm_new"), v["reason"]
                 else:
                     route = "review"
+            if route == "llm_merge" and best_tid in s6_in_cluster:
+                route, reason = "review", "NovaBeds already mapped to this property"
             payload = {"record_id": r["record_id"], "name": r["name"], "city": n["city"], "p": float(p[best_k]) if best_k is not None else 0.0,
                        "candidates": len(rows), "sources": sorted(set().union(*[cands[x] for x in rows])) if rows else [],
                        "reason": reason}
             if route in ("auto_merge", "llm_merge"):
-                h = DEMO.hotels[best_tid]
+                h = copy.deepcopy(DEMO.hotels[best_tid])
                 h["members"].append(r["record_id"])
                 if "S6" not in h["suppliers"]:
                     h["suppliers"].append("S6")
                 DEMO.record_cluster[r["record_id"]] = best_tid
                 s6_in_cluster.add(best_tid)
+                h["n_records"] = len(h["members"])
+                DEMO.hotels[best_tid] = h
                 c["auto_merge" if route == "auto_merge" else "llm"] += 1
                 c["clustered"] += 1
                 majority = [truth.get(m) for m in h["members"] if m != r["record_id"]]
@@ -280,7 +339,7 @@ class Onboarder:
                 new_k += 1
                 tid = f"TS-N{new_k:04d}"
                 DEMO.hotels[tid] = {"tessera_id": tid, "name": normalize.clean_name(r["name"]).title(), "brand": n["brand"],
-                                    "stars": r.get("stars"), "city": n["city"], "neighbourhood": None, "lat": r["lat"], "lng": r["lng"],
+                                    "stars": r.get("stars"), "city": n["city"], "neighbourhood": neighbourhood_of(n["city"], r["lat"], r["lng"]), "lat": r["lat"], "lng": r["lng"],
                                     "phone": n["phone"], "address": r.get("address"), "members": [r["record_id"]],
                                     "suppliers": ["S6"], "n_records": 1, "dups": [], "new": True}
                 DEMO.record_cluster[r["record_id"]] = tid
@@ -293,6 +352,11 @@ class Onboarder:
                 c["review"] += 1
                 payload.update({"decision": "review", "tessera_id": best_tid,
                                 "cluster_name": DEMO.hotels[best_tid]["name"] if best_tid else None})
+            if r["record_id"] in DEMO.record_cluster:
+                DEMO.rec_by_id[r["record_id"]] = r
+                DEMO.norm_by_id[r["record_id"]] = n
+                mapped = DEMO.hotels[DEMO.record_cluster[r["record_id"]]]
+                integrate_rooms(mapped, feed_rooms[r["record_id"]], feed_offers[r["record_id"]])
             c["elapsed"] = time.time() - t_start
             payload["supplier"] = "S6"
             await HUB.broadcast("pipeline", "decision", payload)
@@ -310,8 +374,11 @@ class Onboarder:
             viol += len(sups) - len(set(sups))
         c["violations"] = viol
         c["elapsed"] = time.time() - t_start
-        DEMO.onboarding = {"status": "done", "counters": c, "alpha": DEMO.alpha}
-        await HUB.broadcast("pipeline", "done", {"counters": c, "alpha": DEMO.alpha, "llm_enabled": config.LLM_ENABLED})
+        DEMO.hotel_table = ranking.hotel_table({**DEMO.state, "recs": list(DEMO.rec_by_id.values())})
+        from app.services.simulator import SIM
+        SIM.prepare()
+        DEMO.onboarding = {"status": "done", "risk": DEMO.current_risk, "counters": c, "alpha": DEMO.alpha}
+        await HUB.broadcast("pipeline", "done", {"risk": DEMO.current_risk, "counters": c, "alpha": DEMO.alpha, "llm_enabled": config.LLM_ENABLED})
 
 
 ONBOARDER = Onboarder()

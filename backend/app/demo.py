@@ -24,7 +24,9 @@ class Demo:
     def load(self):
         t0 = time.time()
         self.state = pipeline_run.load()
-        self.matcher = Matcher.load()
+        self.base_state = self.state
+        self.base_matcher = Matcher.load()
+        self.matcher = self.base_matcher
         self.ranking = ranking.load()
         self.reliability = ReliabilityBook()
         self.base_hotels = self.state["hotels"]
@@ -39,6 +41,8 @@ class Demo:
         self.rej = risk_control.ltt_reject(s["cal_raw"], s["cal_y"], config.DEFAULT_BETA)
         grid = np.unique(np.round(np.exp(np.linspace(np.log(0.001), np.log(0.05), 36)), 5))
         self.dense_curve = [self.risk_at(float(a)) for a in grid]
+        self.base_curve = self.dense_curve
+        self.base_reject = self.rej
         self.reset(initial=True)
         self.ready = True
         print(f"Demo state loaded in {time.time() - t0:.1f}s")
@@ -75,6 +79,12 @@ class Demo:
     # ------------------------------------------------------------------ reset
     def reset(self, initial: bool = False):
         with self.lock:
+            self.state = dict(self.base_state)
+            self.matcher = self.base_matcher
+            self.dense_curve = self.base_curve
+            self.rej = self.base_reject
+            self.rec_by_id = {r["record_id"]: r for r in self.state["recs"]}
+            self.norm_by_id = {n["record_id"]: n for n in self.state["norms"]}
             self.state["hotels"] = copy.deepcopy(self.base_hotels)
             self.hotels = self.state["hotels"]
             self.record_cluster = dict(self.base_record_cluster)

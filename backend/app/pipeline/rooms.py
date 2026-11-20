@@ -13,6 +13,8 @@ LARGE_BEDS = {"King", "Queen", "Double"}
 def attr_score(a: dict, b: dict) -> tuple[float, bool, int]:
     """(score, conflict, n_missing). Missing values are neutral; conflicts are strongly negative."""
     s, conflict, missing = 0.0, False, 0
+    if a.get("occupancy") is not None and b.get("occupancy") is not None and a["occupancy"] != b["occupancy"]:
+        return -5.0, True, 0
     for k in ("class", "bed", "view"):
         va, vb = a.get(k), b.get(k)
         if va is None or vb is None:
@@ -40,7 +42,7 @@ def merge_identity(members: list[dict]) -> dict:
         if k == "bed":
             specific = [v for v in vals if v != "Double"]
             vals = specific or vals
-        out[k] = max(set(vals), key=vals.count) if vals else None
+        out[k] = max(vals, key=vals.count) if vals else None
     out["accessible"] = bool(out.get("accessible"))
     return out
 

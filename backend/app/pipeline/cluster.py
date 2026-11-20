@@ -76,15 +76,16 @@ class Clusters:
         """Detach `part` from its cluster into a new cluster (used by bridge pruning)."""
         root = self.find(next(iter(part)))
         rest = self.members[root] - part
+        if not part or not rest or not part <= self.members[root]:
+            raise ValueError("split must partition a single cluster")
+        del self.members[root]
+        del self.suppliers[root]
         for grp in (rest, part):
-            new_root = next(iter(grp))
+            new_root = min(grp)
             for m in grp:
                 self.parent[m] = new_root
             self.members[new_root] = set(grp)
             self.suppliers[new_root] = {self.supplier_of[m] for m in grp}
-        if root not in rest and root not in part:
-            self.members.pop(root, None)
-            self.suppliers.pop(root, None)
 
 
 def cluster_records(supplier_of: dict[str, str], same_edges: list[tuple[str, str, float]],

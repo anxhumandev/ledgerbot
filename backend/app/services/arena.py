@@ -32,7 +32,9 @@ def _rec(rid):
 def build_sets() -> dict:
     """Deterministic evaluation sets shared by both systems (test split only)."""
     if baseline_llm.SETS_PATH.exists():
-        return orjson.loads(baseline_llm.SETS_PATH.read_bytes())
+        cached = orjson.loads(baseline_llm.SETS_PATH.read_bytes())
+        if cached.get("build") == DEMO.state["built_at"] and cached.get("version") == 2 and cached.get("world_digest") == DEMO.state.get("world_digest"):
+            return cached
     t = _truth()
     st = DEMO.state
     rid = [n["record_id"] for n in st["norms"]]
@@ -42,8 +44,10 @@ def build_sets() -> dict:
     lab = {k: int(t["hotel_of_record"][rid[st["pairs"][k][0]]] == t["hotel_of_record"][rid[st["pairs"][k][1]]]) for k in test}
     negs = sorted([k for k in test if lab[k] == 0], key=lambda k: -st["p"][k])
     hard = negs[:160]
-    pos = rng.sample([k for k in test if lab[k] == 1], 160)
-    rest = rng.sample([k for k in negs[160:]], 80)
+    positives = [k for k in test if lab[k] == 1]
+    pos = rng.sample(positives, min(160, len(positives)))
+    remaining = negs[len(hard):]
+    rest = rng.sample(remaining, min(400 - len(hard) - len(pos), len(remaining)))
     hotel = []
     for k in hard + pos + rest:
         i, j = st["pairs"][k]
@@ -75,20 +79,22 @@ def build_sets() -> dict:
     hotel_rooms = {}
     for room_id, os_ in rooms:
         hotel_rooms.setdefault(room_id.rsplit("-R", 1)[0], []).append((room_id, os_))
-    for hid, lst in hotel_rooms.items():
-        if len(lst) >= 2 and len(diff_room) < 50:
-            (r1, o1), (r2, o2) = lst[0], lst[1]
-            a = o1[0]
-            b = next((o for o in o2 if o["supplier"] != a["supplier"] and terms[o["offer_id"]]["board"] == terms[a["offer_id"]]["board"]), None)
-            if b:
-                diff_room.append((a, b))
+    for lst in hotel_rooms.values():
+        for i, (_, first) in enumerate(lst):
+            for _, second in lst[i + 1:]:
+                match = next(((a, b) for a in first for b in second
+                              if a["supplier"] != b["supplier"] and terms[a["offer_id"]]["board"] == terms[b["offer_id"]]["board"]), None)
+                if match:
+                    diff_room.append(match)
+    rng.shuffle(diff_room)
+    diff_room = diff_room[:50]
     room = []
     for kind, lst, y in (("same_offer", same_offer, 1), ("same_room_diff_offer", diff_offer, 0), ("different_room", diff_room, 0)):
         for a, b in lst:
             room.append({"pair_id": f"{a['offer_id']}|{b['offer_id']}", "label": y, "kind": kind,
                          "a": {k: a[k] for k in ("offer_id", "supplier", "room_name", "board_raw", "cancellation_raw", "price_inr")},
                          "b": {k: b[k] for k in ("offer_id", "supplier", "room_name", "board_raw", "cancellation_raw", "price_inr")}})
-    sets = {"hotel": hotel, "room": room}
+    sets = {"hotel": hotel, "room": room, "version": 2, "build": st["built_at"], "world_digest": st.get("world_digest")}
     baseline_llm.SETS_PATH.write_bytes(orjson.dumps(sets))
     return sets
 
@@ -107,6 +113,8 @@ def offer_index() -> dict:
 
 def tessera_hotel_decision(a: str, b: str) -> dict:
     k = DEMO.pair_index.get((a, b), DEMO.pair_index.get((b, a)))
+    if k is None:
+        return {"answer": "different", "p": None, "route": "blocked"}
     raw = float(DEMO.state["raw"][k])
     p = float(DEMO.state["p"][k])
     band = DEMO.band_of(raw)
@@ -166,13 +174,15 @@ def benchmark() -> dict:
     rel = []
     for lo in np.arange(0.5, 1.0, 0.1):
         m = (np.maximum(pt, 1 - pt) >= lo) & (np.maximum(pt, 1 - pt) < lo + 0.1 + (1e-9 if lo >= 0.9 else 0))
-        if m.sum():
+        if m.sum() >= 20:  # tiny bins are noise, not calibration evidence
             acc = float(np.mean((pt[m] >= 0.5) == (st["test_y"][m] == 1)))
             rel.append({"confidence": float(lo + 0.05), "accuracy": acc, "n": int(m.sum())})
     uncertain_share = float((st["band"] == 1).mean())
     per_pair_llm = price_inr(config.ADJUDICATOR_MODEL, 900, 120) / 10  # batched 10 per call (estimate)
-    ad = [v for v in st["llm"].values() if v.get("route") == "llm"]
+    usage = st.get("adjudication_usage")
     tess_cost = uncertain_share * per_pair_llm * 1000
+    if usage is not None:
+        tess_cost = usage["inr"] * 1000 / max(1, len(st["pairs"]))
     largest_wrong = 0
     t = _truth()["hotel_of_record"]
     for g in st["groups"]:
@@ -183,14 +193,14 @@ def benchmark() -> dict:
             "hotel_f1": t_hotel["f1"], "hotel_precision": t_hotel["precision"], "hotel_recall": t_hotel["recall"],
             "hotel_coverage": len(decided) / len(sets["hotel"]), "abstained": len(sets["hotel"]) - len(decided),
             "room_f1": t_room["f1"], "consistency_violations": st["consistency"]["total_violations"],
-            "largest_wrong_cluster": largest_wrong, "cost_per_1000_inr": tess_cost, "cost_estimated": not ad,
+            "largest_wrong_cluster": largest_wrong, "cost_per_1000_inr": tess_cost, "cost_estimated": usage is None,
             "latency_ms": tessera_latency(), "reliability": rel, "guarantee": DEMO.current_risk,
             "global_f1": st["evals"]["test_pairwise"]["f1"],
         },
         "baseline": None, "n_hotel": len(sets["hotel"]), "n_room": len(sets["room"]),
         "baseline_model": config.BASELINE_MODEL,
     }
-    if base and base.get("hotel"):
+    if base and all({p["pair_id"] for p in base.get(kind, [])} == {p["pair_id"] for p in sets[kind]} for kind in ("hotel", "room")):
         s = base["summary"]
         out["baseline"] = {"run_at": base["run_at"], "model": base["model"], "n_hotel": len(base["hotel"]), "n_room": len(base["room"]),
                            "hotel_f1": s.get("hotel_prf", {}).get("f1"), "room_f1": s.get("room_prf", {}).get("f1"),

@@ -4,6 +4,9 @@ from __future__ import annotations
 import asyncio
 import time
 
+from app import config
+from app.event_log import append_event
+
 import orjson
 from fastapi import WebSocket
 
@@ -39,9 +42,9 @@ class Hub:
         self.clients.discard(ws)
 
     async def broadcast(self, topic: str, type_: str, payload) -> None:
-        if not self.clients:
-            return
-        msg = dumps({"topic": topic, "type": type_, "payload": payload, "ts": time.time()}).decode()
+        timestamp = time.time()
+        msg = dumps({"topic": topic, "type": type_, "payload": payload, "ts": timestamp}).decode()
+        await asyncio.to_thread(append_event, config.CACHE_DIR / "events.sqlite3", timestamp, topic, type_, msg)
         dead = []
         for ws in list(self.clients):
             try:

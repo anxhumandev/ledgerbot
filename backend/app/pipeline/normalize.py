@@ -236,6 +236,10 @@ def _take(s: str, phrases: dict):
 
 def parse_room(text: str) -> dict:
     s = _room_tokens(text)
+    occ = re.search(r"\b(?:sleeps|max occupancy|capacidad)\s*[:=]?\s*([1-9]\d?)\b|\b([1-9]\d?)\s*(?:pax|guests?|personas?|hu[eé]spedes)\b", s)
+    occupancy = int(occ.group(1) or occ.group(2)) if occ else None
+    if occ:
+        s = s[:occ.start()] + s[occ.end():]
     learned = learned_dictionary()
     out = {"class": None, "bed": None, "bed_count": None, "view": None, "occupancy": None, "accessible": False,
            "smoking": None, "extras": [], "board": None, "refundable": None, "needs_llm_parse": False}
@@ -278,6 +282,8 @@ def parse_room(text: str) -> dict:
             f, v = ent.get("field"), ent.get("value")
             if f in ("class", "bed", "view", "board") and not out.get(f):
                 out[f] = v
+                if f == "bed":
+                    out["bed_count"] = 2 if v == "Twin" else 1
                 continue
             if f == "extra":
                 out["extras"].append(v)
@@ -289,7 +295,7 @@ def parse_room(text: str) -> dict:
     if out["class"] is None and out["bed"] is not None:
         out["class"] = "Standard" if not still else None
     cls = out["class"]
-    out["occupancy"] = 4 if cls == "Villa" else (3 if cls in ("Suite", "Junior Suite") else 2)
+    out["occupancy"] = occupancy or (4 if cls == "Villa" else (3 if cls in ("Suite", "Junior Suite") else 2))
     return out
 
 
@@ -409,3 +415,12 @@ def parse_activity(listing: dict) -> dict:
     return {"core_attraction": attraction, "access_tier": tier, "time_slot": slot,
             "duration_min": parse_duration(listing.get("duration")), "transfer_included": transfer,
             "meal_included": meal, "private": private, "language": language, "addons": addons}
+
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=["teach"])
+    parser.parse_args()
+    from app.pipeline.teacher import teach
+    teach()

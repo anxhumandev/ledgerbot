@@ -117,9 +117,10 @@ def train(state: dict) -> dict:
         if tid in table:
             hs = [truth["hotel_of_record"][r] for r in h["members"]]
             canon_of[tid] = max(set(hs), key=hs.count)
-    rng = np.random.default_rng(config.SEED)
     models, evals = {}, {}
     for kind in ("naive", "ipw"):
+        # Paired comparison: both learners see identical training slates and held-out queries.
+        rng = np.random.default_rng(config.SEED)
         Xs, ys, groups = [], [], []
         for p in PERSONAS:
             sub = agg.loc[p["id"]] if p["id"] in agg.index.get_level_values(0) else None
@@ -211,14 +212,16 @@ def rank(persona_id: str, mode: str, table: dict, model_res: dict, reliability: 
     use_margin = mode in ("business", "risk")
     use_risk = mode == "risk"
     scale, tau = 1.0, 1.0
-    base_order = np.argsort(-z)
+    base_order = np.argsort(-z, kind="stable")
     for _ in range(12):
-        final = z + scale * ((w["margin"] * nm + w["platinum"] * plat) * use_margin - w["risk"] * (1 - relia) * 10 * use_risk)
-        order = np.argsort(-final)
-        tau = kendalltau(np.argsort(base_order), np.argsort(order)).statistic if mode != "relevance" else 1.0
+        final = z + scale * ((w["margin"] * nm + w["platinum"] * plat) * use_margin - w["risk"] * (1 - relia) * use_risk)
+        order = np.argsort(-final, kind="stable")
+        tau = kendalltau(np.argsort(base_order), np.argsort(order)).statistic if mode != "relevance" and len(rows) > 1 else 1.0
         if tau >= config.KENDALL_GUARDRAIL or mode == "relevance":
             break
         scale *= 0.8
+    else:
+        final, order, scale, tau = z, base_order, 0.0, 1.0
     out = []
     for i in order[:top]:
         r = rows[i]

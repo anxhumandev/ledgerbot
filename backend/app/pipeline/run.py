@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import pickle
+import hashlib
 import random
 import time
 from collections import defaultdict
@@ -18,12 +19,23 @@ from app.eval import metrics as M
 from app.pipeline import adjudicator, blocking, cluster, normalize, risk_control
 from app.pipeline.features import FEATURES, feature_matrix, mask_phone, pair_features
 from app.pipeline.matcher import Matcher, fit_calibrator, train
+from app.pipeline.cost import METER
 
 STATE_PATH = config.CACHE_DIR / "state.pkl"
 
 
 def load_json(name):
     return orjson.loads((config.WORLD_DIR / name).read_bytes())
+
+
+def world_digest():
+    """Identify every generated input used by the cached pipeline and live scenes."""
+    digest = hashlib.sha256()
+    for path in sorted(config.WORLD_DIR.iterdir()):
+        if path.suffix in (".json", ".parquet"):
+            digest.update(path.name.encode())
+            digest.update(hashlib.sha256(path.read_bytes()).digest())
+    return digest.hexdigest()
 
 
 def log(msg, t0):
@@ -59,12 +71,13 @@ def build(verbose: bool = True) -> dict:
     log(f"normalized {len(norms)} supplier hotel records", t0)
     emb_path = config.CACHE_DIR / "emb.npy"
     ids_path = config.CACHE_DIR / "emb_ids.json"
-    if emb_path.exists() and ids_path.exists() and orjson.loads(ids_path.read_bytes()) == [n["record_id"] for n in norms]:
+    embedding_inputs = hashlib.sha256(orjson.dumps([(n["record_id"], blocking.embed_text(n)) for n in norms])).hexdigest()
+    if emb_path.exists() and ids_path.exists() and orjson.loads(ids_path.read_bytes()) == embedding_inputs:
         emb = np.load(emb_path)
     else:
         emb = blocking.embed(norms)
         np.save(emb_path, emb)
-        ids_path.write_bytes(orjson.dumps([n["record_id"] for n in norms]))
+        ids_path.write_bytes(orjson.dumps(embedding_inputs))
     log("embeddings ready", t0)
     index = blocking.build_index(norms, emb)
     cross, same_sup = index.all_pairs()
@@ -139,9 +152,12 @@ def build(verbose: bool = True) -> dict:
     route = np.array(["auto_reject", "uncertain", "auto_merge"], dtype=object)[band]
     uncertain_idx = [k for k in range(len(pairs)) if band[k] == 1]
     sub_i = FEATURES.index("subbrand_conflict")
+    usage_before = dict(METER.session)
     llm = adjudicator.adjudicate([
         {"pair_id": f"{rid[pairs[k][0]]}|{rid[pairs[k][1]]}", "a": recs[pairs[k][0]], "b": recs[pairs[k][1]],
          "p": float(p[k]), "subbrand_conflict": bool(X[k, sub_i])} for k in uncertain_idx])
+    adjudication_usage = {key: METER.session[key] - usage_before[key]
+                          for key in ("inr", "calls", "input_tokens", "output_tokens")}
     rrng = random.Random(config.SEED + 99)
     final = np.zeros(len(pairs), dtype=np.int8)  # 1 same, 0 different
     final[band == 2] = 1
@@ -238,10 +254,11 @@ def build(verbose: bool = True) -> dict:
         routes[r_] += 1
     test_band = band[test_idx]
     state = {
-        "built_at": time.strftime("%Y-%m-%d %H:%M:%S"), "world": truth.raw.get("world"),
+        "built_at": time.strftime("%Y-%m-%d %H:%M:%S"), "world": truth.raw.get("world"), "world_digest": world_digest(),
         "norms": norms, "recs": recs, "emb": emb, "index": index, "pairs": pairs,
         "sources": [sorted(cross[pq]) for pq in pairs], "X": X, "raw": raw, "p": p, "band": band,
         "route": route, "final": final, "llm": llm, "reviewer": reviewer, "alias": alias,
+        "adjudication_usage": adjudication_usage,
         "dup_pairs": sorted(found_dups), "dup_stats": dup_stats,
         "groups": groups, "cluster_stats": cstats, "consistency": cons,
         "risk": {"alpha": alpha, "beta": config.DEFAULT_BETA, "tau_accept_raw": acc["tau"], "tau_reject_raw": rej["tau"],
@@ -324,13 +341,18 @@ def report(s: dict) -> None:
 
 
 def save(state: dict) -> None:
-    with open(STATE_PATH, "wb") as f:
+    temporary = STATE_PATH.with_suffix(".tmp")
+    with open(temporary, "wb") as f:
         pickle.dump(state, f, protocol=pickle.HIGHEST_PROTOCOL)
+    temporary.replace(STATE_PATH)
 
 
 def load() -> dict:
     with open(STATE_PATH, "rb") as f:
-        return pickle.load(f)
+        state = pickle.load(f)
+    if state.get("world_digest") and state["world_digest"] != world_digest():
+        raise ValueError("The generated world has changed. Run make train to rebuild the matching pipeline.")
+    return state
 
 
 if __name__ == "__main__":

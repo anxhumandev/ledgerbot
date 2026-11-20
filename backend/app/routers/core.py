@@ -29,6 +29,8 @@ async def reset():
     DEMO.reset()
     SIM.reset()
     VOTE.reset()
+    from app.ws import HUB
+    await HUB.broadcast("vote", "reset", {"session": VOTE.session})
     DEMO.last_replay = None
     return {"ok": True, "epoch": DEMO.reset_epoch}
 

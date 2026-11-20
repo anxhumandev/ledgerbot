@@ -19,8 +19,8 @@ IMG_VAR_DIR = FRONTEND_PUBLIC / "img" / "var"
 
 SEED = int(os.getenv("SEED", "42"))
 # "demo" = Dubai only; "large" = Dubai + 4 more cities. The risk dial needs the large
-# world's calibration volume to certify alpha < 1% (see README "Why large by default").
-WORLD = os.getenv("WORLD", "large").lower()
+# world's calibration volume to certify alpha < 1% (use WORLD=large for recording).
+WORLD = os.getenv("WORLD", "demo").lower()
 
 # ---------------------------------------------------------------- LLM
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
@@ -41,17 +41,17 @@ USD_TO_INR = float(os.getenv("USD_TO_INR", "84.0"))
 # ---------------------------------------------------------------- Suppliers
 SUPPLIERS = {
     "S1": {"name": "DirectConnect", "persona": "TBO direct contracts", "color": "#0E5E6F",
-           "take_rate": 0.14, "profile": {"confirm": 0.993, "price_jump": 0.005, "latency": 1.2}},
+           "take_rate": 0.12, "profile": {"confirm": 0.993, "price_jump": 0.005, "latency": 1.2}},
     "S2": {"name": "GlobalBeds", "persona": "Big bed bank", "color": "#8A6D3B",
-           "take_rate": 0.085, "profile": {"confirm": 0.975, "price_jump": 0.04, "latency": 2.8}},
+           "take_rate": 0.09, "profile": {"confirm": 0.975, "price_jump": 0.04, "latency": 2.8}},
     "S3": {"name": "IberiaBeds", "persona": "Spanish wholesaler", "color": "#9C4F6B",
-           "take_rate": 0.09, "profile": {"confirm": 0.986, "price_jump": 0.015, "latency": 1.9}},
+           "take_rate": 0.095, "profile": {"confirm": 0.986, "price_jump": 0.015, "latency": 1.9}},
     "S4": {"name": "LuxeCollection", "persona": "Luxury specialist", "color": "#3F5F8F",
            "take_rate": 0.10, "profile": {"confirm": 0.990, "price_jump": 0.01, "latency": 1.5}},
     "S5": {"name": "RapidStay", "persona": "Aggregator of aggregators", "color": "#6E7B4E",
-           "take_rate": 0.07, "profile": {"confirm": 0.958, "price_jump": 0.06, "latency": 3.9}},
+           "take_rate": 0.08, "profile": {"confirm": 0.958, "price_jump": 0.06, "latency": 3.9}},
     "S6": {"name": "NovaBeds", "persona": "New supplier (live onboarding)", "color": "#B4683A",
-           "take_rate": 0.085, "profile": {"confirm": 0.980, "price_jump": 0.025, "latency": 2.2}},
+           "take_rate": 0.09, "profile": {"confirm": 0.980, "price_jump": 0.025, "latency": 2.2}},
 }
 ACTIVE_SUPPLIERS = ["S1", "S2", "S3", "S4", "S5"]
 
@@ -65,7 +65,7 @@ PRICE_JUMP_COST_INR = 900.0  # agent credit when price changes at booking
 RISK_DELTA = 0.05
 RISK_ALPHA_GRID = [0.001, 0.0025, 0.005, 0.01, 0.02, 0.05]
 DEFAULT_ALPHA = 0.01
-DEFAULT_BETA = 0.01  # max share of true matches lost to auto-reject
+DEFAULT_BETA = 0.02  # max share of true matches lost to auto-reject
 REVIEW_MINUTES_PER_PAIR = 1.5
 REVIEW_COST_INR_PER_HOUR = 450.0
 PAIRS_PER_MONTH = 1_200_000  # illustrative volume for the ops-cost stat
@@ -81,7 +81,7 @@ TBO_ANNUAL_HOTEL_GTV_INR = 31_500 * 1e7  # ₹31,500 Cr (TBO Q2 FY27 results)
 TBO_GROSS_MARGIN = 0.06
 ONBOARD_PACE_MS = int(os.getenv("ONBOARD_PACE_MS", "40"))
 PUBLIC_HOST = os.getenv("PUBLIC_HOST", "")
-FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5173"))
+FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5174"))
 
 
 def ensure_dirs() -> None:

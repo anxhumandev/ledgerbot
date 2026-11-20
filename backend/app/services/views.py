@@ -93,7 +93,7 @@ def listings(area: str = "marina", strategy: str = "cheapest", nights: int = 3, 
     target = None
     for h in hs:
         for gi, g in enumerate(h["rooms"]):
-            if g["ident"].get("class") == "Deluxe" and g["ident"].get("bed") in ("King", "Double", "Queen"):
+            if g["ident"].get("class") == "Deluxe" and g["ident"].get("bed") == "King":
                 for s in g["slots"]:
                     if s["board"] == "BB" and s["refundable"]:
                         o = min(s["offers"], key=lambda x: x["price"])

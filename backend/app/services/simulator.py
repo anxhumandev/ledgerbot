@@ -61,6 +61,7 @@ class Simulator:
                     if len(s["offers"]) >= 2:
                         slots.append((h["tessera_id"], gi, s))
         self.all_slots = slots
+        self.stream_hotels = DEMO.hotels.copy()
         self.baseline_winners = {(t, gi, s["board"], s["refundable"]): off.select(s["offers"], DEMO.p_success)["winner"]["supplier"]
                                  for t, gi, s in slots}
         # showcase cards: hotels whose headline slot is won by GlobalBeds at baseline (the sabotage target)
@@ -76,13 +77,13 @@ class Simulator:
                               "n_suppliers": len(g["suppliers"])})
         cards.sort(key=lambda c: (c["hero"] is None, -c["n_suppliers"], c["hotel"]))
         self.showcase = cards[:4]
+        self.showcase_slots = {c["tessera_id"]: next(s for t, gi, s in slots if t == c["tessera_id"] and gi == c["group"] and s["board"] == c["board"] and s["refundable"] == c["refundable"]) for c in self.showcase}
         # stream hotels: showcase + a spread of other multi-supplier slots
         self.stream_slots = [x for x in slots if x[0] in {c["tessera_id"] for c in self.showcase}] + \
             [x for x in slots if len(x[2]["offers"]) >= 3][:400]
 
     def slot_of(self, card):
-        g = DEMO.hotels[card["tessera_id"]]["rooms"][card["group"]]
-        return next(s for s in g["slots"] if s["board"] == card["board"] and s["refundable"] == card["refundable"])
+        return self.showcase_slots[card["tessera_id"]]
 
     def showcase_view(self) -> list[dict]:
         out = []
@@ -110,6 +111,15 @@ class Simulator:
         self.task = None
 
     async def _loop(self):
+        try:
+            await self._loop_inner()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            import traceback
+            traceback.print_exc()
+
+    async def _loop_inner(self):
         period = 1.0 / config.BOOKINGS_PER_SEC
         last_sup, last_flip = 0.0, 0.0
         prev_cards = {c["tessera_id"]: c["supplier"] for c in self.showcase_view()}
@@ -151,7 +161,7 @@ class Simulator:
             confirmed = False
         with DEMO.reliability.lock:
             DEMO.reliability.get(w["supplier"]).observe(confirmed, jump, min(latency, 30))
-        h = DEMO.hotels[tid]
+        h = self.stream_hotels[tid]
         status = "confirmed" if confirmed and not jump else ("price_jump" if jump else ("timeout" if timeout else "failed"))
         return {"hotel": h["name"], "supplier": w["supplier"], "status": status, "latency": round(latency, 2),
                 "jump_inr": int(w["price"] * self.rng.uniform(0.04, 0.12)) if jump else 0, "price": w["price"],
@@ -230,39 +240,43 @@ class Replay:
             rel = res["models"]["ipw"].predict(X)
             relz = (rel - rel.mean()) / (rel.std() + 1e-9)
             util = {r["tid"]: float(z) for r, z in zip(rows, relz)}
-            # raw arm: supplier rows sorted cheapest-first among the persona's broad search (duplicates included)
-            cands = sorted(rows, key=lambda r: -util[r["tid"]])[:25]
-            raw_opts = []
-            for r in cands:
+            # Both arms show the same 10 most relevant hotels and the same headline offer slot per hotel.
+            top = sorted(rows, key=lambda r: -util[r["tid"]])[:10]
+            raw_screen, tess = [], []
+            for r in top:
                 h = DEMO.hotels[r["tid"]]
                 g = max(h["rooms"], key=lambda g: len(g["suppliers"]))
-                for s in g["slots"][:2]:
-                    for o in s["offers"]:
-                        raw_opts.append((r["tid"], o, util[r["tid"]]))
-            raw_opts.sort(key=lambda t: t[1]["price"])
-            raw_screen = raw_opts[:10]
+                s_ = max(g["slots"], key=lambda s_: len(s_["offers"]))
+                # raw shelf: every supplier's copy, cheapest first, duplicates crowd the first screen
+                for o in sorted(s_["offers"], key=lambda o: o["price"]):
+                    raw_screen.append((r["tid"], o, util[r["tid"]]))
+                tess.append((r["tid"], off.select(s_["offers"], DEMO.p_success)["winner"], util[r["tid"]]))
+            raw_screen = raw_screen[:10]
             dup = len(raw_screen) - len({t[0] for t in raw_screen})
-            tess = []
-            for r in sorted(rows, key=lambda r: -util[r["tid"]])[:10]:
-                h = DEMO.hotels[r["tid"]]
-                g = max(h["rooms"], key=lambda g: len(g["suppliers"]))
-                s = max(g["slots"], key=lambda s: len(s["offers"]))
-                w = off.select(s["offers"], DEMO.p_success)["winner"]
-                tess.append((r["tid"], w, util[r["tid"]]))
             arms[pid] = {"raw": (raw_screen, dup, mapping_err_raw), "tessera": (tess, 0, mapping_err_tess)}
         return arms
 
     @staticmethod
     def _arm_probs(screen, dup):
         prices = np.array([o["price"] for _, o, _ in screen], dtype=float)
-        u = np.array([z for *_, z in screen]) * 1.1 - 0.9 * np.log(prices / prices.min())
-        u0 = 1.6 + 0.22 * dup  # choice-overload: near-duplicate options on screen raise P(no purchase)
-        e = np.exp(np.r_[u0, u])
-        return e / e.sum()
+        # utility: hotel relevance, minus price relative to the same hotel's cheapest copy on screen
+        tids = [t for t, _, _ in screen]
+        hotel_min = {t: min(p for (tt, _, _), p in zip(screen, prices) if tt == t) for t in set(tids)}
+        rel_price = np.array([p / hotel_min[t] for t, p in zip(tids, prices)])
+        u = np.array([z for *_, z in screen]) * 1.1 - 6.0 * (rel_price - 1)
+        # Two-stage (nested-logit style) choice. Stage 1, book at all: most B2B searches end without a booking
+        # (look-to-book of a few %); a better screen helps only weakly (LAMBDA x inclusive value), and each
+        # near-duplicate on the first screen adds a small choice-overload penalty. Stage 2: which option.
+        iv = float(np.log(np.exp(u).sum()))
+        p_book = 1.0 / (1.0 + np.exp(Replay.U0 - Replay.LAMBDA * iv + Replay.OVERLOAD * dup))
+        within = np.exp(u) / np.exp(u).sum()
+        return np.r_[1.0 - p_book, p_book * within]
+
+    U0, LAMBDA, OVERLOAD = 3.9, 0.1, 0.015
 
     async def _run(self, n: int):
         rng = np.random.default_rng(config.SEED + 5)
-        arms = self._build_arms()
+        arms = await asyncio.to_thread(self._build_arms)
         pids = list(PERSONA)
         weights = np.array([0.24, 0.16, 0.18, 0.16, 0.14, 0.12])
         probs = {pid: {a: self._arm_probs(arms[pid][a][0], arms[pid][a][1]) for a in ("raw", "tessera")} for pid in pids}
@@ -298,8 +312,8 @@ class Replay:
             await HUB.broadcast("replay", "tick", self._view(tot, done, n))
             await asyncio.sleep(0.1)
         final = self._view(tot, done, n)
-        await HUB.broadcast("replay", "done", final)
         DEMO.last_replay = final
+        await HUB.broadcast("replay", "done", final)
 
     @staticmethod
     def _view(tot, done, n):

@@ -5,7 +5,7 @@ import asyncio
 import socket
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app import config
 from app.demo import DEMO
@@ -20,7 +20,7 @@ router = APIRouter()
 class Sabotage(BaseModel):
     supplier: str
     mode: str = "price_jump"
-    severity: float = 0.35
+    severity: float = Field(default=0.35, ge=0, le=1)
 
 
 @router.get("/suppliers")
@@ -34,7 +34,7 @@ async def sim_start():
 
 
 @router.post("/sim/stop")
-def sim_stop():
+async def sim_stop():
     SIM.stop()
     return {"status": "stopped"}
 
@@ -122,8 +122,8 @@ def vote_session():
 
 
 @router.get("/vote/state")
-def vote_state():
-    return VOTE.state()
+def vote_state(nickname: str = ""):
+    return VOTE.state(nickname)
 
 
 @router.post("/vote/next")
@@ -145,7 +145,7 @@ class Cast(BaseModel):
 
 @router.post("/vote/cast")
 async def vote_cast(body: Cast):
-    if body.session and body.session != VOTE.session:
+    if body.session != VOTE.session:
         return {"ok": False, "reason": "stale session"}
     return await VOTE.cast(body.nickname, body.idx, body.answer)
 

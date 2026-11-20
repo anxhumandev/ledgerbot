@@ -3,18 +3,17 @@ from __future__ import annotations
 
 import random
 import secrets
+import threading
 import time
 from collections import Counter
 
-import lightgbm as lgb
 import numpy as np
 
 from app import config
 from app.demo import DEMO
 from app.eval import baseline_llm
 from app.pipeline import risk_control
-from app.pipeline.features import FEATURES, pair_features
-from app.pipeline.matcher import N_ROUNDS, PARAMS
+from app.pipeline.matcher import Matcher, fit_calibrator, train
 from app.services import arena
 from app.ws import HUB
 
@@ -41,7 +40,17 @@ def curate() -> list[dict]:
     pairs.append(("hotel", A[0], B[0]))
     # 2-4. pairs Tessera is unsure about (uncertain band)
     rid = [n["record_id"] for n in st["norms"]]
-    unc = [k for k in np.where(st["band"] == 1)[0]]
+    def train_pair(k):
+        i, j = st["pairs"][k]
+        return all(t["splits"].get(t["hotel_of_record"][rid[n]]) == "train" for n in (i, j))
+    unc = [k for k in np.where(st["band"] == 1)[0] if train_pair(k)]
+    if len(unc) < 3:
+        nearest = sorted(range(len(st["pairs"])), key=lambda k: abs(st["p"][k] - 0.5))
+        for k in nearest:
+            if len(unc) >= 3:
+                break
+            if k not in unc and train_pair(k):
+                unc.append(k)
     rng.shuffle(unc)
     for k in unc[:3]:
         i, j = st["pairs"][k]
@@ -50,7 +59,7 @@ def curate() -> list[dict]:
     pos = [x for x in sets["hotel"] if x["label"] == 1 and {x["a"]["supplier"], x["b"]["supplier"]} & {"S5", "S2"}]
     pos.sort(key=lambda x: x["pair_id"])
     if pos:
-        pairs.append(("hotel", pos[3]["a"]["record_id"], pos[3]["b"]["record_id"]))
+        pairs.append(("hotel", pos[0]["a"]["record_id"], pos[0]["b"]["record_id"]))
     # 6. hard negative from the test set
     hn = [x for x in sets["hotel"] if x["kind"] == "hard_negative"]
     if hn:
@@ -94,6 +103,7 @@ def curate() -> list[dict]:
 
 class VoteSession:
     def __init__(self):
+        self.learn_lock = threading.Lock()
         self.reset()
 
     def reset(self):
@@ -104,6 +114,8 @@ class VoteSession:
         self.opened_at = 0.0
         self.revealed = set()
         self.learned = None
+        self.learned_labels = ()
+        self.last_reveal = None
 
     def ensure(self):
         if not self.pairs:
@@ -111,7 +123,7 @@ class VoteSession:
 
     def public_pair(self, i: int) -> dict:
         p = self.pairs[i]
-        return {"idx": i, "kind": p["kind"], "a": p["a"], "b": p["b"], "countdown": COUNTDOWN_S, "opened_at": self.opened_at,
+        return {"session": self.session, "idx": i, "kind": p["kind"], "a": p["a"], "b": p["b"], "countdown": COUNTDOWN_S, "opened_at": self.opened_at,
                 "total": len(self.pairs)}
 
     async def next(self) -> dict:
@@ -119,6 +131,7 @@ class VoteSession:
         if self.current + 1 >= len(self.pairs):
             return {"status": "finished"}
         self.current += 1
+        self.last_reveal = None
         self.opened_at = time.time()
         self.votes.setdefault(self.current, {})
         payload = self.public_pair(self.current)
@@ -126,20 +139,23 @@ class VoteSession:
         return payload
 
     async def cast(self, nickname: str, idx: int, answer: str) -> dict:
-        if answer not in ANSWERS or idx != self.current or idx in self.revealed:
-            return {"ok": False}
-        nick = (nickname or "anon").strip()[:24]
+        nick = nickname.strip()[:24]
+        if not nick or idx < 0 or idx != self.current or answer not in ANSWERS:
+            return {"ok": False, "reason": "invalid vote"}
+        previous = self.votes.get(idx, {}).get(nick)
+        if previous:
+            return {"ok": True, "answer": previous["answer"]}
         ms = (time.time() - self.opened_at) * 1000
-        if ms > (COUNTDOWN_S + 1.5) * 1000:
-            return {"ok": False, "reason": "time"}
-        self.votes[idx][nick] = {"answer": answer, "ms": ms}  # idempotent per (session, pair, nickname)
+        if idx in self.revealed or ms >= COUNTDOWN_S * 1000:
+            return {"ok": False, "reason": "voting closed"}
+        self.votes[idx][nick] = {"answer": answer, "ms": ms}
         await HUB.broadcast("vote", "tally", self.tally(idx))
-        return {"ok": True}
+        return {"ok": True, "answer": answer}
 
     def tally(self, idx: int) -> dict:
         v = self.votes.get(idx, {})
         c = Counter(x["answer"] for x in v.values())
-        return {"idx": idx, "counts": {a: c.get(a, 0) for a in ANSWERS}, "n": len(v)}
+        return {"session": self.session, "idx": idx, "counts": {a: c.get(a, 0) for a in ANSWERS}, "n": len(v)}
 
     async def reveal(self) -> dict:
         i = self.current
@@ -149,8 +165,9 @@ class VoteSession:
         p = self.pairs[i]
         v = self.votes.get(i, {})
         human_ms = float(np.mean([x["ms"] for x in v.values()])) if v else None
-        payload = {"idx": i, "truth": p["truth"], "tessera": p["tessera"], "baseline": p["baseline"],
+        payload = {"session": self.session, "idx": i, "truth": p["truth"], "tessera": p["tessera"], "baseline": p["baseline"],
                    "tally": self.tally(i), "human_avg_ms": human_ms, "leaderboard": self.leaderboard()}
+        self.last_reveal = payload
         await HUB.broadcast("vote", "reveal", payload)
         return payload
 
@@ -163,7 +180,7 @@ class VoteSession:
         rows = [{"name": k, "kind": "human", "score": v} for k, v in scores.items()]
         rows.append({"name": "Tessera", "kind": "tessera", "score": sum(self.pairs[i]["tessera"]["answer"] == self.pairs[i]["truth"] for i in self.revealed)})
         if any(self.pairs[i]["baseline"] for i in self.revealed):
-            rows.append({"name": "LLM-only", "kind": "llm", "score": sum((self.pairs[i]["baseline"] or {}).get("answer") == self.pairs[i]["truth"] for i in self.revealed)})
+            rows.append({"name": "LLM-only", "kind": "llm", "score": sum((self.pairs[i]["baseline"] or {}).get("answer") == ("different" if self.pairs[i]["truth"] == "same_room_diff_offer" else self.pairs[i]["truth"]) for i in self.revealed)})
         rows.sort(key=lambda r: -r["score"])
         return rows
 
@@ -179,44 +196,81 @@ class VoteSession:
         abst = [i for i in disagreed if self.pairs[i]["tessera"]["answer"] == "abstain"]
         return {"disagreed": len(disagreed), "tessera_abstained": len(abst), "pairs": disagreed}
 
-    def state(self) -> dict:
+    def state(self, nickname: str = "") -> dict:
         self.ensure()
         return {"session": self.session, "current": self.current, "total": len(self.pairs),
                 "pair": self.public_pair(self.current) if self.current >= 0 else None,
+                "reveal": self.last_reveal, "answer": self.votes.get(self.current, {}).get(nickname.strip()[:24], {}).get("answer"),
                 "revealed": self.current in self.revealed, "tally": self.tally(self.current) if self.current >= 0 else None,
                 "leaderboard": self.leaderboard(), "twist": self.twist(), "learned": self.learned}
 
     def learn(self) -> dict:
         """Append majority votes as labels, retrain the matcher, recompute LTT and the review band."""
-        t0 = time.time()
-        st = DEMO.state
-        new_X, new_y = [], []
-        for i in self.revealed:
+        with self.learn_lock:
+            return self._learn()
+
+    def _learn(self):
+        started = time.perf_counter()
+        session = self.session
+        st = DEMO.base_state
+        truth = arena._truth()
+        split = {rid: truth["splits"].get(h) for rid, h in truth["hotel_of_record"].items()}
+        labels = {}
+        for i in sorted(self.revealed):
             p = self.pairs[i]
             if p["kind"] != "hotel" or not self.votes.get(i):
                 continue
-            maj = Counter(x["answer"] for x in self.votes[i].values()).most_common(1)[0][0]
-            if maj not in ("same", "different"):
-                continue
             a, b = p["_ids"]
-            ia, ib = DEMO.row[a], DEMO.row[b]
-            new_X.append(pair_features(DEMO.norm_by_id[a], DEMO.norm_by_id[b], float(st["emb"][ia] @ st["emb"][ib]),
-                                       st["index"].hashes.get(a), st["index"].hashes.get(b)))
-            new_y.append(1 if maj == "same" else 0)
-        before = int((st["band"] == 1).sum())
-        X = np.vstack([st["train_X"]] + ([np.array(new_X, dtype=np.float32)] * 5 if new_X else []))
-        y = np.concatenate([st["train_y"]] + ([np.array(new_y)] * 5 if new_y else []))
-        w = np.concatenate([st["train_w"]] + ([np.full(len(new_y), 3.0)] * 5 if new_y else []))
-        b = lgb.train(PARAMS, lgb.Dataset(X, label=y, weight=w, feature_name=FEATURES), num_boost_round=N_ROUNDS)
-        cal_raw = b.predict(st["cal_X"])
-        acc = risk_control.ltt_accept(cal_raw, st["cal_y"], DEMO.alpha, blocks=st["cal_blocks"])
-        rej = risk_control.ltt_reject(cal_raw, st["cal_y"], config.DEFAULT_BETA)
-        raw_all = b.predict(st["X"])
-        after = int(((raw_all < acc["tau"]) & (raw_all > rej["tau"])).sum())
-        n = len(raw_all)
-        self.learned = {"labels_added": len(new_y), "review_before": before, "review_after": after,
-                        "review_before_pct": before / n, "review_after_pct": after / n, "seconds": round(time.time() - t0, 2)}
-        return self.learned
+            # Keep the calibration and evaluation properties held out.
+            if split[a] != "train" or split[b] != "train":
+                continue
+            answers = [v["answer"] for v in self.votes[i].values()]
+            answer, count = Counter(answers).most_common(1)[0]
+            if count > len(answers) / 2 and answer in ("same", "different"):
+                k = DEMO.pair_index.get((a, b), DEMO.pair_index.get((b, a)))
+                if k is not None:
+                    labels[k] = int(answer == "same")
+        signature = tuple(sorted(labels.items()))
+        if signature == self.learned_labels and self.learned is not None:
+            return self.learned
+        old = DEMO.state["raw"]
+        before = int((risk_control.bands(old, DEMO.tau_accept_raw, DEMO.tau_reject_raw) == 1).sum())
+        n = len(old)
+        result = {"labels_added": len(labels), "review_before": before, "review_after": before,
+                  "review_before_pct": before / n, "review_after_pct": before / n, "seconds": 0}
+        if not labels:
+            return {**result, "reason": "No training-split hotel pairs with a majority vote yet."}
+        X = np.vstack((st["train_X"], st["X"][list(labels)]))
+        y = np.r_[st["train_y"], list(labels.values())]
+        w = np.r_[st["train_w"], np.full(len(labels), 3.0)]
+        booster = train(X, y, w)
+        cal_raw = booster.predict(st["cal_X"])
+        matcher = Matcher(booster, fit_calibrator(cal_raw, st["cal_y"]))
+        raw, probabilities = matcher.predict(st["X"])
+        test_rows = [i for i, (a, b) in enumerate(st["pairs"])
+                     if split[st["norms"][a]["record_id"]] == split[st["norms"][b]["record_id"]] == "test"]
+        test_raw = raw[test_rows]
+        reject = risk_control.ltt_reject(cal_raw, st["cal_y"], config.DEFAULT_BETA)
+        def curve(alphas):
+            return risk_control.risk_curve(cal_raw, st["cal_y"], st["cal_blocks"], test_raw, st["test_y"],
+                                           st["test_blocks"], alphas, calibrate=matcher.calibrate)
+        grid = curve(config.RISK_ALPHA_GRID)
+        dense = curve([r["alpha"] for r in DEMO.base_curve])
+        with DEMO.lock:
+            if self.session != session:
+                return {**result, "reason": "Voting session reset during training."}
+            DEMO.matcher = matcher
+            DEMO.state = {**DEMO.state, "raw": raw, "p": probabilities, "cal_raw": cal_raw, "test_raw": test_raw,
+                          "risk": {**st["risk"], "curve": grid}}
+            DEMO.rej = reject
+            DEMO.dense_curve = dense
+            current = DEMO.set_alpha(DEMO.alpha)
+            DEMO.state["band"] = risk_control.bands(raw, current["tau_accept_raw"], current["tau_reject_raw"])
+            after = int((DEMO.state["band"] == 1).sum())
+            self.learned_labels = signature
+            self.learned = {**result, "review_after": after, "review_after_pct": after / n,
+                            "seconds": round(time.perf_counter() - started, 2)}
+            return self.learned
 
 
 VOTE = VoteSession()

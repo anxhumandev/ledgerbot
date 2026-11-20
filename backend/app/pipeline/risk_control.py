@@ -30,7 +30,7 @@ def n_min(rate: float, delta: float) -> int:
 
 
 def to_blocks(scores: np.ndarray, y: np.ndarray, blocks: np.ndarray | None, how: str = "max"):
-    if blocks is None:
+    if blocks is None or len(scores) == 0:
         return scores, y
     order = np.argsort(blocks, kind="stable")
     b, s, yy = blocks[order], scores[order], y[order]
@@ -131,5 +131,6 @@ def risk_row(a, cal_raw, cal_y, cal_blocks, test_raw, test_y, test_blocks, rej, 
         "automation": ev["automation"], "auto_accept_rate": ev["auto_accept"] / max(1, ev["n"]),
         "review_rate": ev["uncertain"] / max(1, ev["n"]),
         "empirical_fmr": ev["empirical_fmr"], "test_false_merges": ev["false_merges"], "test_merges": ev["merges"],
-        "pair_fmr": ev["pair_fmr"], "test_n": ev["n"], "held": ev["empirical_fmr"] <= a,
+        "pair_fmr": ev["pair_fmr"], "test_n": ev["n"],
+        "held": ev["empirical_fmr"] <= a if ev["merges"] and acc["certifiable"] else None,
     }
