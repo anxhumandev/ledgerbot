@@ -43,7 +43,7 @@ SUPPLIERS = {
     "S1": {"name": "DirectConnect", "persona": "TBO direct contracts", "color": "#0E5E6F",
            "take_rate": 0.14, "profile": {"confirm": 0.993, "price_jump": 0.005, "latency": 1.2}},
     "S2": {"name": "GlobalBeds", "persona": "Big bed bank", "color": "#8A6D3B",
-           "take_rate": 0.08, "profile": {"confirm": 0.975, "price_jump": 0.04, "latency": 2.8}},
+           "take_rate": 0.085, "profile": {"confirm": 0.975, "price_jump": 0.04, "latency": 2.8}},
     "S3": {"name": "IberiaBeds", "persona": "Spanish wholesaler", "color": "#9C4F6B",
            "take_rate": 0.09, "profile": {"confirm": 0.986, "price_jump": 0.015, "latency": 1.9}},
     "S4": {"name": "LuxeCollection", "persona": "Luxury specialist", "color": "#3F5F8F",
@@ -57,8 +57,8 @@ ACTIVE_SUPPLIERS = ["S1", "S2", "S3", "S4", "S5"]
 
 # ---------------------------------------------------------------- Offer selection (EV)
 FAILURE_COST_INR = float(os.getenv("FAILURE_COST_INR", "2500"))
-# P(book) = sigmoid(a - b*price_rel + c*refundable + d*pay_later)
-PBOOK = {"a": 1.2, "b": 6.0, "c": 0.35, "d": 0.15}
+# P(book) = sigmoid(a - b*(price_rel - 1) + c*refundable + d*pay_later), price_rel = price / slot min
+PBOOK = {"a": -1.0, "b": 6.0, "c": 0.35, "d": 0.15}
 PRICE_JUMP_COST_INR = 900.0  # agent credit when price changes at booking
 
 # ---------------------------------------------------------------- Risk control

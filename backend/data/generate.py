@@ -524,7 +524,7 @@ SUPPLIER_ID_FMT = {
     "S5": lambda rng: f"RS_{rng.randint(1000, 9999)}_{rng.choice('abcdefgh')}",
     "S6": lambda rng: f"NB-{rng.randint(100000, 999999)}",
 }
-TAKE_MARKUP = {"S1": 1.00, "S2": 0.965, "S3": 0.985, "S4": 1.06, "S5": 0.95, "S6": 0.975}
+TAKE_MARKUP = {"S1": 1.00, "S2": 0.94, "S3": 0.985, "S4": 1.06, "S5": 0.95, "S6": 0.975}
 BOARD_UPLIFT = {"RO": 1.0, "BB": 1.12, "HB": 1.28, "FB": 1.42, "AI": 1.62}
 CANCEL_HOURS = {"S1": [48], "S2": [72, 48], "S3": [48], "S4": [168, 72], "S5": [24, 48], "S6": [48, 72]}
 OFFER_COMBOS = [(("RO", False), 0.6), (("BB", True), 0.75), (("RO", True), 0.35), (("BB", False), 0.3),
@@ -562,6 +562,8 @@ def make_record(h, sup, rng, ids: IdGen, photos_by_hotel, with_offers: bool, tru
         "lat": round(lat, 6), "lng": round(lng, 6), "stars": stars,
         "city": {"S2": CITIES[h["city"]]["code"], "S3": CITIES[h["city"]]["name"].replace("Dubai", "Dubái")}.get(sup, CITIES[h["city"]]["name"]),
         "photos": [],
+        "review_score": round(min(10, h["review_score"] + rng.gauss(0, 0.15)), 1) if sup in ("S1", "S3", "S4") else None,
+        "platinum": bool(h.get("platinum")) and sup == "S1",
     }
     truth["hotel_of_record"][rid] = h["hotel_id"]
     # photos (showcase only): each supplier carries 55-90% of base images as degraded variants
@@ -833,7 +835,7 @@ def gen_relevance(hotels, offers, truth):
     return rel
 
 
-def gen_search_logs(hotels, rel):
+def gen_search_logs(hotels, rel, listing_ref):
     rng = np.random.default_rng(SEED + 7)
     dubai = [h for h in hotels if h["city"] == "dubai"]
     ids = np.array([h["hotel_id"] for h in dubai])
@@ -860,8 +862,8 @@ def gen_search_logs(hotels, rel):
             g = rel[p["id"]][ids[idx]]
             c = rng.random() < exam[r] * click_p[g]
             b = c and rng.random() < 0.18 + 0.1 * g
-            rows.append((s, p["id"], randomized, r + 1, ids[idx], int(c), int(b)))
-    return pd.DataFrame(rows, columns=["session_id", "persona", "randomized", "position", "hotel_id", "click", "book"])
+            rows.append((s, p["id"], randomized, r + 1, listing_ref[ids[idx]], int(c), int(b)))
+    return pd.DataFrame(rows, columns=["session_id", "persona", "randomized", "position", "listing_id", "click", "book"])
 
 
 def gen_booking_history():
@@ -979,7 +981,15 @@ def generate(world_kind: str | None = None):
 
     activities = gen_activities(truth)
     rel = gen_relevance(hotels, offers_raw, truth)
-    logs = gen_search_logs(hotels, rel)
+    # search logs reference the listing id the platform showed (a supplier record id), never canonical ids
+    prio = {"S1": 0, "S4": 1, "S3": 2, "S2": 3, "S5": 4}
+    listing_ref = {}
+    for r in records:
+        hid = truth["hotel_of_record"][r["record_id"]]
+        cur = listing_ref.get(hid)
+        if cur is None or prio[r["supplier"]] < prio[cur[0]]:
+            listing_ref[hid] = (r["supplier"], r["record_id"])
+    logs = gen_search_logs(hotels, rel, {k: v[1] for k, v in listing_ref.items()})
     hist = gen_booking_history()
 
     truth["canonical_hotels"] = all_h

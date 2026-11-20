@@ -333,8 +333,9 @@ def load() -> dict:
 
 
 if __name__ == "__main__":
-    from app.pipeline import enrich
+    from app.pipeline import enrich, ranking
     st = build()
     enrich.enrich(st)
+    ranking.train(st)
     save(st)
     print(f"state saved to {STATE_PATH}")
