@@ -33,7 +33,7 @@ def load_results() -> dict | None:
 def baseline_cost_per_pair() -> tuple[float, bool]:
     """(INR per pair, measured?)"""
     r = load_results()
-    if r and r.get("summary", {}).get("hotel_cost_per_pair_inr") is not None:
+    if r and not r.get("simulated") and r.get("summary", {}).get("hotel_cost_per_pair_inr") is not None:
         return float(r["summary"]["hotel_cost_per_pair_inr"]), True
     from app.pipeline.cost import price_inr
     return price_inr(config.BASELINE_MODEL, EST_INPUT_TOKENS, EST_OUTPUT_TOKENS), False
@@ -60,7 +60,8 @@ def run() -> dict:
     import anthropic
     from app.pipeline.cost import price_inr
     if not config.ANTHROPIC_API_KEY:
-        raise SystemExit("ANTHROPIC_API_KEY not set: the baseline is never faked. Add a key to .env and re-run.")
+        raise SystemExit("ANTHROPIC_API_KEY not set: the baseline is never faked. Add a key to .env and re-run, "
+                         "or run `make baseline-sim` for a clearly labelled simulated profile.")
     from app.demo import DEMO
     from app.services.arena import build_sets
 
@@ -68,7 +69,7 @@ def run() -> dict:
     sets = build_sets()
     client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
     prev = load_results() or {}
-    same_model = prev.get("model") == config.BASELINE_MODEL
+    same_model = prev.get("model") == config.BASELINE_MODEL and not prev.get("simulated")
     results = {"hotel": {}, "room": {}}
     for kind, saved in results.items():
         requested = {row["pair_id"]: row for row in sets[kind]}

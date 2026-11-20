@@ -29,6 +29,22 @@ ADJUDICATOR_MODEL = os.getenv("ADJUDICATOR_MODEL", "claude-haiku-5-5")
 BASELINE_MODEL = os.getenv("BASELINE_MODEL", "claude-opus-5-5")
 TEACHER_MODEL = os.getenv("TEACHER_MODEL", "claude-opus-5-5")
 
+# Simulated LLM-only baseline (no API key). ASSUMPTIONS, not measurements: the share of each pair
+# kind a zero-shot pairwise LLM gets wrong. Which pairs err is chosen by observable difficulty
+# (name similarity, distance), so the errors land on realistic cases. Every screen that shows these
+# results labels them "simulated"; a real `make baseline` run replaces them.
+SIM_BASELINE = {
+    "hotel_hard_negative_false_merge": 0.20,  # sister / same-brand nearby properties called "same"
+    "hotel_negative_false_merge": 0.01,       # ordinary non-matches called "same"
+    "hotel_positive_miss": 0.06,              # noisy true matches called "different"
+    "room_diff_terms_false_merge": 0.30,      # same room, different board/cancellation called "same offer"
+    "room_diff_room_false_merge": 0.08,       # different physical rooms called "same offer"
+    "room_same_offer_miss": 0.10,             # identical offers in different wording called "different"
+    "latency_median_s": 1.6,                  # per pair, one call per pair
+    "latency_sigma": 0.45,                    # lognormal spread
+    "seed": 7,
+}
+
 # USD per million tokens. Source: Anthropic model pricing table (cached 2026-10-06),
 # first-party API rates. Update here if pricing changes.
 LLM_PRICING_USD_PER_MTOK = {

@@ -1,4 +1,4 @@
-.PHONY: setup data train baseline dev reset teach test
+.PHONY: setup data train baseline baseline-sim dev reset teach test
 
 PYTHON_BOOTSTRAP ?= python3
 PYTHON := $(abspath $(if $(wildcard .venv/Scripts/python.exe),.venv/Scripts/python.exe,.venv/bin/python))
@@ -17,6 +17,9 @@ train:
 
 baseline:
 	cd backend && "$(PYTHON)" -m app.eval.baseline_llm
+
+baseline-sim:
+	cd backend && "$(PYTHON)" -m app.eval.baseline_sim
 
 dev:
 	"$(PYTHON)" dev.py

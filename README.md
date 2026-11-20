@@ -124,6 +124,13 @@ Built for **TBO VoyageHack 4.0** · Problem 3 (Multi Supplier Optimization)
 
 ---
 
+## Recording the demo video
+
+1. **Start fresh.** Stop any running servers, then from the repo root run `.venv\Scripts\python dev.py` (or `make dev`). A server started before a code change keeps serving the old code.
+2. **No API key?** Run `make baseline-sim` once (Windows: `cd backend; ..\.venv\Scripts\python -m app.eval.baseline_sim`). Scene 08 then shows the LLM-only column labelled **SIMULATED**. Say so in the voice-over, e.g. *"The LLM-only column is a simulated profile; LedgerBot's column is measured."*
+3. **Open** `http://localhost:5174/?record=1` in Chrome or Edge and press **F11** for full screen. The stage is designed at 1920 × 1080 and stretches to fill any window shape, so nothing is cut off and there are no side bars. Full screen on a 16:9 display (e.g. 1536 × 864 at 125 % scaling, which is 1920 × 1080 physical) is pixel-identical to the design.
+4. **Record** with Win + Alt + R (Xbox Game Bar) or OBS at 1920 × 1080. Press `R` before every take.
+
 ## Run-of-show (about 8–9 minutes)
 
 Press `R` before every take: it resets simulation, onboarding, votes, sabotage, the dial and any retrained model, so two recordings look the same (the booking stream is seeded).
@@ -155,7 +162,7 @@ Every number on screen comes from an API response computed by the pipeline. Wher
 - **The certifiable range depends on audit size.** With the large world the audit holds about 3,000 property pairs, enough for α down to roughly 0.5%. Below that the dial shows "not certifiable" and LedgerBot sends every candidate merge to review. The Dubai-only demo world certifies a narrower range.
 - **Held-out check.** Every α on the dial is re-checked on test-split hotels the matcher and the calibrator never saw. The chip turns clay if the empirical rate exceeds α.
 - **Human review is simulated.** Pairs sent to review are resolved by a simulated reviewer with a 1% error rate so the clusters are complete. The review rate itself is real.
-- **LLM calls are optional and never faked.** Without `ANTHROPIC_API_KEY`, uncertain pairs route straight to review and the UI says "LLM offline". The LLM-only baseline (`make baseline`, `claude-opus-5-5`, one pair per call, zero-shot) is shown only after it has actually run and been cached with its timestamp. Prices for the cost meter are in `backend/app/config.py`.
+- **LLM calls are optional and never faked.** Without `ANTHROPIC_API_KEY`, uncertain pairs route straight to review and the UI says "LLM offline". The LLM-only baseline (`make baseline`, `claude-opus-5-5`, one pair per call, zero-shot) is a measured run, cached with its timestamp. Without a key, `make baseline-sim` writes a **simulated profile** instead: answers follow the stated error rates in `config.SIM_BASELINE` (assumptions, applied to the hardest-looking pairs), and F1, consistency violations and calibration are computed from those answers. Every screen that shows it says "simulated", its cost and latency are marked "est.", and a later real run replaces it without reusing any simulated row. Prices for the cost meter are in `backend/app/config.py`.
 - **Simulation assumptions** (Scenes 06 and 09) are in `backend/app/config.py` and `backend/app/services/simulator.py`: supplier take rates (direct contracts highest), hidden reliability profiles, a booking-probability model for offer selection, and a two-stage choice model for the A/B replay calibrated to a look-to-book of about 3%. Both replay arms see the same hotels and offer slots; the raw arm shows every supplier's copy cheapest-first, LedgerBot shows one expected-value offer per hotel. The annualized figure is `lift × ₹31,500 Cr annual hotel GTV × 6% gross margin`, labelled illustrative.
 - **Photos are procedural.** No stock images are shipped: `data/photos.py` draws editorial placeholder images from a seeded RNG and creates per-supplier degraded copies (crop, resize, JPEG quality, watermark, colour shift) so pHash dedup has real work to do.
 

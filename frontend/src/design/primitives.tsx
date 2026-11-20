@@ -12,19 +12,25 @@ export const rise = (i = 0) => ({
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
-/* ------------------------------------------------------------------ Stage: fixed 1920x1080, letterboxed */
+/* ------------------------------------------------------------------ Stage: designed at 1920x1080, fills any window
+   Scaled so the 1920x1080 design always fits, then widened or heightened to the window's own aspect ratio,
+   so there are no empty bars on screens or browser windows that are not exactly 16:9. */
 export function Stage({ children }: { children: ReactNode }) {
-  const [scale, setScale] = useState(1);
+  const [box, setBox] = useState({ scale: 1, w: 1920, h: 1080 });
   useLayoutEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const scale = Math.min(vw / 1920, vh / 1080);
+      setBox({ scale, w: vw / scale, h: vh / scale });
+    };
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
   }, []);
   return (
-    <div className="fixed inset-0 bg-paper flex items-center justify-center overflow-hidden">
-      <div style={{ width: 1920, height: 1080, transform: `scale(${scale})`, transformOrigin: "center center", flex: "none" }}
-        className="relative bg-paper grain overflow-hidden">
+    <div className="fixed inset-0 bg-paper overflow-hidden">
+      <div style={{ width: box.w, height: box.h, transform: `scale(${box.scale})`, transformOrigin: "0 0", position: "absolute", left: 0, top: 0 }}
+        className="bg-paper grain overflow-hidden">
         {children}
       </div>
     </div>

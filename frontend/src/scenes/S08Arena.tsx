@@ -12,9 +12,14 @@ import { useTopic } from "../lib/ws";
 export default function Arena() {
   const [view, setView] = useState<"A" | "B">("A");
   useHotkeys({ a: () => setView("A"), b: () => setView("B") });
+  const { data: bench } = useFetch<any>("/arena/benchmark");
+  const simulated = !!bench?.baseline?.simulated;
+  const sublineA = simulated
+    ? "Same candidate pairs, same held-out hotels. LedgerBot is measured; the LLM-only column is a simulated profile."
+    : "Same candidate pairs, same held-out hotels. Every number below is measured.";
   return (
     <div className="h-full flex flex-col">
-      <SceneHeader headline="LedgerBot vs an LLM-only pipeline." subline={view === "A" ? "Same candidate pairs, same held-out hotels. Every number below is measured." : "Judges vs Machine: vote on your phone."}
+      <SceneHeader headline="LedgerBot vs an LLM-only pipeline." subline={view === "A" ? sublineA : "Judges vs Machine: vote on your phone."}
         right={<Toggle value={view} onChange={setView} options={[{ value: "A", label: "Benchmark" }, { value: "B", label: "Judges vs Machine" }]} />} />
       <div className="flex-1 min-h-0">{view === "A" ? <Board /> : <Voting />}</div>
     </div>
@@ -32,13 +37,14 @@ function Board() {
   }, [corners]);
   if (!data) return <Skeleton className="w-full h-full" />;
   const t = data.tessera, b = data.baseline;
+  const sim = !!b?.simulated;
   const rows: [string, string, string, string?][] = [
     ["Hotel pair F1", b ? (b.hotel_f1 ?? 0).toFixed(3) : "—", `${t.hotel_f1.toFixed(3)}`, `${pct(t.hotel_coverage, 1)} decided automatically · ${t.abstained} abstained`],
     ["Room-variant F1 (offer corner cases)", b?.room_f1 != null ? b.room_f1.toFixed(3) : "—", t.room_f1.toFixed(3)],
     ["Consistency violations", b ? String(b.consistency_violations) : "—", String(t.consistency_violations), "whole world"],
     ["Largest wrong cluster size", b ? String(b.largest_wrong_cluster) : "—", String(t.largest_wrong_cluster), "whole world"],
-    ["Cost per 1,000 pairs", b ? formatINR(b.cost_per_1000_inr, { decimals: 2 }) : "—", `${formatINR(t.cost_per_1000_inr, { decimals: 2 })}${t.cost_estimated ? " est." : ""}`, "LLM only on the uncertain band"],
-    ["p95 latency per pair", b?.latency_s ? `${b.latency_s.p95.toFixed(1)} s` : "—", ms(t.latency_ms.p95), "features + LightGBM on CPU"],
+    ["Cost per 1,000 pairs", b ? `${formatINR(b.cost_per_1000_inr, { decimals: 2 })}${sim ? " est." : ""}` : "—", `${formatINR(t.cost_per_1000_inr, { decimals: 2 })}${t.cost_estimated ? " est." : ""}`, "LLM only on the uncertain band"],
+    ["p95 latency per pair", b?.latency_s ? `${b.latency_s.p95.toFixed(1)} s${sim ? " est." : ""}` : "—", ms(t.latency_ms.p95), "features + LightGBM on CPU"],
     ["Calibrated? Guarantee?", b ? "stated confidence ≠ accuracy" : "—", !t.guarantee.certifiable ? "No certified auto-merge threshold" : !t.guarantee.test_merges ? "No held-out merges" : `${t.guarantee.held ? "✓ held" : "✗ violated"} at α = ${(t.guarantee.alpha * 100).toFixed(1)}%`],
   ];
   const rel = [
@@ -49,14 +55,16 @@ function Board() {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_520px] gap-6 h-full">
       <div className="flex flex-col gap-4 min-h-0">
-        <Card {...rise(0)} className="overflow-hidden">
+        <Card {...rise(0)} className="overflow-hidden shrink-0">
           <div className="grid grid-cols-[1.3fr_1fr_1fr] px-6 h-12 items-center bg-surface-2 text-[13px] font-medium">
             <span className="text-ink-3 uppercase tracking-[0.08em] text-[12px]">Metric · {data.n_hotel} hotel pairs · {data.n_room} room pairs</span>
-            <span className="text-iris">LLM-only ({data.baseline_model}, pairwise)</span>
+            <span className="text-iris flex items-center gap-2">
+              {sim ? <>LLM-only (pairwise) <Chip variant="iris">SIMULATED</Chip></> : <>LLM-only ({data.baseline_model}, pairwise)</>}
+            </span>
             <span className="text-lagoon">LedgerBot</span>
           </div>
           {rows.map(([m, l, r, note], i) => (
-            <motion.div key={m} {...rise(i + 1)} className="grid grid-cols-[1.3fr_1fr_1fr] px-6 py-3.5 items-center border-t border-line">
+            <motion.div key={m} {...rise(i + 1)} className="grid grid-cols-[1.3fr_1fr_1fr] px-6 py-3 items-center border-t border-line">
               <span className="text-[16px]">{m}</span>
               <span className="font-mono text-[20px] text-iris">{l}</span>
               <span><span className="font-mono text-[20px] text-lagoon">{r}</span>{note && <div className="text-[12px] text-ink-3">{note}</div>}</span>
@@ -69,10 +77,17 @@ function Board() {
             <div className="text-[13px] text-ink-2 mt-1">The LLM-only column is never estimated or faked. Add ANTHROPIC_API_KEY to .env and run it once ({data.n_hotel} + {data.n_room} calls to {data.baseline_model}); results are cached with a timestamp.</div>
           </Card>
         )}
-        {b && <div className="text-[13px] text-ink-3">Baseline run on {b.run_at}, model {b.model}. <Cite>Entity matching with LLMs (Peeters, Steiner &amp; Bizer, EDBT 2025)</Cite></div>}
+        {b && sim && (
+          <div className="text-[13px] text-ink-2 shrink-0 leading-snug">
+            <span className="text-iris font-medium">LLM-only column is a simulated profile, not a live run:</span> stated error rates for a zero-shot pairwise LLM
+            ({pct(b.profile?.hotel_hard_negative_false_merge ?? 0, 0)} of sister hotels merged, {pct(b.profile?.room_diff_terms_false_merge ?? 0, 0)} of breakfast-vs-room-only
+            offers merged) on the hardest-looking pairs; F1, violations and calibration computed from those answers; cost and latency estimated.
+          </div>
+        )}
+        {b && !sim && <div className="text-[13px] text-ink-3">Baseline run on {b.run_at}, model {b.model}. <Cite>Entity matching with LLMs (Peeters, Steiner &amp; Bizer, EDBT 2025)</Cite></div>}
         {corner && (
           <Card className="p-5">
-            <Caption>Corner case · where the LLM-only pipeline was wrong</Caption>
+            <Caption>Corner case · where the {sim ? "simulated " : ""}LLM-only pipeline was wrong</Caption>
             <AnimatePresence mode="wait">
               <motion.div key={ci} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={T} className="mt-2">
                 <div className="grid grid-cols-2 gap-4 text-[14px]">
@@ -97,7 +112,7 @@ function Board() {
         <Caption>Reliability diagram · stated confidence vs actual accuracy</Caption>
         <div className="flex gap-4 mt-2 text-[13px]">
           <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-lagoon" />LedgerBot (held-out)</span>
-          <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-iris" />LLM-only {b ? "" : "(not run)"}</span>
+          <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-iris" />LLM-only {b ? (sim ? "(simulated)" : "") : "(not run)"}</span>
           <span className="flex items-center gap-2"><span className="w-4 h-0.5 border-t border-dashed border-ink-3" />perfect</span>
         </div>
         <div className="flex-1 mt-3">
@@ -113,6 +128,12 @@ function Board() {
           </ResponsiveContainer>
         </div>
         <div className="text-[12px] text-ink-3 mt-2">x: confidence in the predicted answer · y: share correct. On the diagonal = says what it knows.</div>
+        {t.reliability.length > 0 && (
+          <div className="text-[12px] text-ink-2 mt-1">
+            Pairs per point · <span className="text-lagoon">LedgerBot</span> {t.reliability.map((r: any) => r.n.toLocaleString("en-IN")).join(" · ")}
+            {b?.reliability?.length ? <> · <span className="text-iris">LLM-only</span> {b.reliability.map((r: any) => r.n.toLocaleString("en-IN")).join(" · ")}</> : null}
+          </div>
+        )}
       </Card>
     </div>
   );
@@ -230,7 +251,7 @@ function Voting() {
                   <Card className="p-4"><Caption>Truth</Caption><div className="text-[18px] mt-1 font-medium">{ANSWER_LABEL[reveal.truth]}</div><div className="text-[12px] text-ink-3 mt-1">humans avg {reveal.human_avg_ms ? ms(reveal.human_avg_ms) : "—"}</div></Card>
                   <Card className="p-4 border-lagoon"><Caption>LedgerBot</Caption><div className="text-[18px] mt-1 font-medium text-lagoon">{ANSWER_LABEL[reveal.tessera.answer]}</div>
                     <div className="text-[12px] text-ink-3 mt-1">{reveal.tessera.p != null ? `p = ${reveal.tessera.p.toFixed(3)} · ` : ""}{ms(reveal.tessera.ms)}</div></Card>
-                  <Card className="p-4"><Caption>LLM-only (cached)</Caption><div className="text-[18px] mt-1 font-medium text-iris">{reveal.baseline ? `${ANSWER_LABEL[reveal.baseline.answer]} (${reveal.baseline.confidence}%)` : "not run"}</div></Card>
+                  <Card className="p-4"><Caption>LLM-only ({reveal.baseline?.simulated ? "simulated" : "cached"})</Caption><div className="text-[18px] mt-1 font-medium text-iris">{reveal.baseline ? `${ANSWER_LABEL[reveal.baseline.answer]} (${reveal.baseline.confidence}%)` : "not run"}</div></Card>
                 </motion.div>
               )}
             </AnimatePresence>

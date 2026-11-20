@@ -84,7 +84,7 @@ def curate() -> list[dict]:
             out.append({"idx": n, "kind": "hotel", "a": _hotel_card(a), "b": _hotel_card(b), "truth": truth,
                         "tessera": {**td, "ms": round(ms, 2)}, "_ids": [a, b],
                         "baseline": {"answer": "same" if bl["same"] else "different", "confidence": bl["confidence"],
-                                     "latency_s": bl["latency_s"]} if bl else None})
+                                     "latency_s": bl["latency_s"], "simulated": bool(base.get("simulated"))} if bl else None})
         else:
             ta, tb = t["offer_terms"][a["offer_id"]], t["offer_terms"][b["offer_id"]]
             same_room = t["room_of_offer"][a["offer_id"]] == t["room_of_offer"][b["offer_id"]]
@@ -97,7 +97,8 @@ def curate() -> list[dict]:
                               "phone": o["cancellation_raw"], "stars": None, "coords": f"₹{o['price_inr']:,}/night"}
             out.append({"idx": n, "kind": "room", "a": card(a), "b": card(b), "truth": truth,
                         "tessera": {"answer": ans, "p": None, "route": "auto", "ms": round(arena.tessera_latency()["p50"], 2)},
-                        "baseline": {"answer": "same" if bl["same"] else "different", "confidence": bl["confidence"]} if bl else None})
+                        "baseline": {"answer": "same" if bl["same"] else "different", "confidence": bl["confidence"],
+                                     "simulated": bool(base.get("simulated"))} if bl else None})
     return out
 
 
@@ -180,7 +181,8 @@ class VoteSession:
         rows = [{"name": k, "kind": "human", "score": v} for k, v in scores.items()]
         rows.append({"name": "LedgerBot", "kind": "tessera", "score": sum(self.pairs[i]["tessera"]["answer"] == self.pairs[i]["truth"] for i in self.revealed)})
         if any(self.pairs[i]["baseline"] for i in self.revealed):
-            rows.append({"name": "LLM-only", "kind": "llm", "score": sum((self.pairs[i]["baseline"] or {}).get("answer") == ("different" if self.pairs[i]["truth"] == "same_room_diff_offer" else self.pairs[i]["truth"]) for i in self.revealed)})
+            sim = any((self.pairs[i]["baseline"] or {}).get("simulated") for i in self.revealed)
+            rows.append({"name": "LLM-only (simulated)" if sim else "LLM-only", "kind": "llm", "score": sum((self.pairs[i]["baseline"] or {}).get("answer") == ("different" if self.pairs[i]["truth"] == "same_room_diff_offer" else self.pairs[i]["truth"]) for i in self.revealed)})
         rows.sort(key=lambda r: -r["score"])
         return rows
 

@@ -206,7 +206,8 @@ def benchmark() -> dict:
                            "hotel_f1": s.get("hotel_prf", {}).get("f1"), "room_f1": s.get("room_prf", {}).get("f1"),
                            "consistency_violations": s.get("consistency_violations"), "largest_wrong_cluster": s.get("largest_wrong_cluster"),
                            "cost_per_1000_inr": (s.get("hotel_cost_per_pair_inr") or 0) * 1000,
-                           "latency_s": s.get("hotel_latency"), "reliability": s.get("reliability")}
+                           "latency_s": s.get("hotel_latency"), "reliability": s.get("reliability"),
+                           "simulated": bool(base.get("simulated")), "profile": base.get("profile")}
     return out
 
 
