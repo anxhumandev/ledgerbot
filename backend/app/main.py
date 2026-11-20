@@ -1,4 +1,4 @@
-"""Tessera FastAPI app: REST under /api, WebSocket at /ws."""
+"""LedgerBot FastAPI app: REST under /api, WebSocket at /ws."""
 from __future__ import annotations
 
 import asyncio
@@ -57,7 +57,7 @@ async def lifespan(app: FastAPI):
         await asyncio.gather(*jobs, return_exceptions=True)
 
 
-app = FastAPI(title="Tessera", default_response_class=ORJSONResponse, lifespan=lifespan)
+app = FastAPI(title="LedgerBot", default_response_class=ORJSONResponse, lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origin_regex=r"https?://.*", allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
 for r in (core.router, pipeline.router, sim.router):

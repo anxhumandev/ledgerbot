@@ -1,4 +1,4 @@
-"""Scene 08A: Tessera vs LLM-only benchmark on identical pair sets."""
+"""Scene 08A: LedgerBot vs LLM-only benchmark on identical pair sets."""
 from __future__ import annotations
 
 import random
@@ -168,7 +168,7 @@ def benchmark() -> dict:
     t_hotel = decision_prf([d["answer"] == "same" for d, _ in decided], [x["label"] for _, x in decided])
     rd = [tessera_room_decision(x["a"]["offer_id"], x["b"]["offer_id"]) for x in sets["room"]]
     t_room = decision_prf([d["answer"] == "same" for d in rd], [x["label"] for x in sets["room"]])
-    # Tessera calibration on held-out test pairs
+    # LedgerBot calibration on held-out test pairs
     st = DEMO.state
     pt = DEMO.matcher.calibrate(st["test_raw"])
     rel = []

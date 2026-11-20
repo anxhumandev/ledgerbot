@@ -1,4 +1,4 @@
-"""Deterministic synthetic multi-supplier world for Tessera.
+"""Deterministic synthetic multi-supplier world for LedgerBot.
 
     python -m data.generate            # writes backend/data/world/*.json|parquet + photos
     python -m data.generate --sample   # print a few noisy supplier records per supplier

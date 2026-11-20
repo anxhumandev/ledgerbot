@@ -17,7 +17,7 @@ export function TopBar() {
     <div className="absolute top-0 left-0 right-0 h-14 px-16 flex items-center justify-between border-b border-line/70 z-20 bg-paper/80 backdrop-blur-[2px]">
       <div className="flex items-center gap-3">
         <svg width="22" height="22" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="var(--lagoon)" /><g fill="#F7F4EE"><rect x="7" y="7" width="8" height="8" rx="1.5" /><rect x="17" y="7" width="8" height="8" rx="1.5" opacity=".7" /><rect x="7" y="17" width="8" height="8" rx="1.5" opacity=".7" /><rect x="17" y="17" width="8" height="8" rx="1.5" fill="var(--saffron)" /></g></svg>
-        <span className="font-serif text-[26px] leading-none text-ink">Tessera</span>
+        <span className="font-serif text-[26px] leading-none text-ink">LedgerBot</span>
       </div>
       <div className="absolute left-1/2 -translate-x-1/2 text-[14px] text-ink-3">
         <span className="font-mono">{sc.id}</span><span className="mx-2">·</span><span className="text-ink-2">{sc.title}</span>
@@ -42,7 +42,7 @@ export function TopBar() {
 export function Footer() {
   return (
     <div className="absolute bottom-0 left-0 right-0 h-7 px-16 flex items-center text-[12px] text-ink-3 z-20">
-      Synthetic demo data · prices and policies are fictional · Tessera prototype for TBO VoyageHack 4.0
+      Synthetic demo data · prices and policies are fictional · LedgerBot prototype for TBO VoyageHack 4.0
       {!RECORD_MODE && <SceneNav />}
     </div>
   );

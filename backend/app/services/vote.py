@@ -1,4 +1,4 @@
-"""Scene 08B: Judges vs Machine. Phones vote on curated pairs; Tessera and the cached baseline answer too."""
+"""Scene 08B: Judges vs Machine. Phones vote on curated pairs; LedgerBot and the cached baseline answer too."""
 from __future__ import annotations
 
 import random
@@ -38,7 +38,7 @@ def curate() -> list[dict]:
     A = [m for m in DEMO.base_hotels[sc["Atlantis The Palm"]]["members"] if DEMO.rec_by_id[m]["supplier"] == "S5"] or DEMO.base_hotels[sc["Atlantis The Palm"]]["members"]
     B = [m for m in DEMO.base_hotels[sc["Atlantis The Royal"]]["members"] if DEMO.rec_by_id[m]["supplier"] == "S2"] or DEMO.base_hotels[sc["Atlantis The Royal"]]["members"]
     pairs.append(("hotel", A[0], B[0]))
-    # 2-4. pairs Tessera is unsure about (uncertain band)
+    # 2-4. pairs LedgerBot is unsure about (uncertain band)
     rid = [n["record_id"] for n in st["norms"]]
     def train_pair(k):
         i, j = st["pairs"][k]
@@ -55,7 +55,7 @@ def curate() -> list[dict]:
     for k in unc[:3]:
         i, j = st["pairs"][k]
         pairs.append(("hotel", rid[i], rid[j]))
-    # 5. noisy true match Tessera merged automatically
+    # 5. noisy true match LedgerBot merged automatically
     pos = [x for x in sets["hotel"] if x["label"] == 1 and {x["a"]["supplier"], x["b"]["supplier"]} & {"S5", "S2"}]
     pos.sort(key=lambda x: x["pair_id"])
     if pos:
@@ -178,7 +178,7 @@ class VoteSession:
             for nick, x in self.votes.get(i, {}).items():
                 scores[nick] += x["answer"] == truth
         rows = [{"name": k, "kind": "human", "score": v} for k, v in scores.items()]
-        rows.append({"name": "Tessera", "kind": "tessera", "score": sum(self.pairs[i]["tessera"]["answer"] == self.pairs[i]["truth"] for i in self.revealed)})
+        rows.append({"name": "LedgerBot", "kind": "tessera", "score": sum(self.pairs[i]["tessera"]["answer"] == self.pairs[i]["truth"] for i in self.revealed)})
         if any(self.pairs[i]["baseline"] for i in self.revealed):
             rows.append({"name": "LLM-only", "kind": "llm", "score": sum((self.pairs[i]["baseline"] or {}).get("answer") == ("different" if self.pairs[i]["truth"] == "same_room_diff_offer" else self.pairs[i]["truth"]) for i in self.revealed)})
         rows.sort(key=lambda r: -r["score"])

@@ -1,4 +1,4 @@
-"""Token + rupee cost meter for every LLM call Tessera makes."""
+"""Token + rupee cost meter for every LLM call LedgerBot makes."""
 from __future__ import annotations
 
 import threading

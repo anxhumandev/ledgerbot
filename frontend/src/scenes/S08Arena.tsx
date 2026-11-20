@@ -14,7 +14,7 @@ export default function Arena() {
   useHotkeys({ a: () => setView("A"), b: () => setView("B") });
   return (
     <div className="h-full flex flex-col">
-      <SceneHeader headline="Tessera vs an LLM-only pipeline." subline={view === "A" ? "Same candidate pairs, same held-out hotels. Every number below is measured." : "Judges vs Machine: vote on your phone."}
+      <SceneHeader headline="LedgerBot vs an LLM-only pipeline." subline={view === "A" ? "Same candidate pairs, same held-out hotels. Every number below is measured." : "Judges vs Machine: vote on your phone."}
         right={<Toggle value={view} onChange={setView} options={[{ value: "A", label: "Benchmark" }, { value: "B", label: "Judges vs Machine" }]} />} />
       <div className="flex-1 min-h-0">{view === "A" ? <Board /> : <Voting />}</div>
     </div>
@@ -53,7 +53,7 @@ function Board() {
           <div className="grid grid-cols-[1.3fr_1fr_1fr] px-6 h-12 items-center bg-surface-2 text-[13px] font-medium">
             <span className="text-ink-3 uppercase tracking-[0.08em] text-[12px]">Metric · {data.n_hotel} hotel pairs · {data.n_room} room pairs</span>
             <span className="text-iris">LLM-only ({data.baseline_model}, pairwise)</span>
-            <span className="text-lagoon">Tessera</span>
+            <span className="text-lagoon">LedgerBot</span>
           </div>
           {rows.map(([m, l, r, note], i) => (
             <motion.div key={m} {...rise(i + 1)} className="grid grid-cols-[1.3fr_1fr_1fr] px-6 py-3.5 items-center border-t border-line">
@@ -86,7 +86,7 @@ function Board() {
                 <div className="mt-3 flex gap-3 text-[14px]">
                   <Chip variant="neutral">truth: {corner.truth.replaceAll("_", " ")}</Chip>
                   <Chip variant="iris">LLM: {corner.llm.same ? "same" : "different"} ({corner.llm.confidence}% sure)</Chip>
-                  <Chip variant="lagoon">Tessera: {corner.tessera.answer}{corner.tessera.p != null ? ` (p = ${corner.tessera.p.toFixed(2)})` : ""}</Chip>
+                  <Chip variant="lagoon">LedgerBot: {corner.tessera.answer}{corner.tessera.p != null ? ` (p = ${corner.tessera.p.toFixed(2)})` : ""}</Chip>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -96,7 +96,7 @@ function Board() {
       <Card {...rise(2)} className="p-5 flex flex-col">
         <Caption>Reliability diagram · stated confidence vs actual accuracy</Caption>
         <div className="flex gap-4 mt-2 text-[13px]">
-          <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-lagoon" />Tessera (held-out)</span>
+          <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-lagoon" />LedgerBot (held-out)</span>
           <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-iris" />LLM-only {b ? "" : "(not run)"}</span>
           <span className="flex items-center gap-2"><span className="w-4 h-0.5 border-t border-dashed border-ink-3" />perfect</span>
         </div>
@@ -228,7 +228,7 @@ function Voting() {
               {reveal && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T} className="grid grid-cols-3 gap-3">
                   <Card className="p-4"><Caption>Truth</Caption><div className="text-[18px] mt-1 font-medium">{ANSWER_LABEL[reveal.truth]}</div><div className="text-[12px] text-ink-3 mt-1">humans avg {reveal.human_avg_ms ? ms(reveal.human_avg_ms) : "—"}</div></Card>
-                  <Card className="p-4 border-lagoon"><Caption>Tessera</Caption><div className="text-[18px] mt-1 font-medium text-lagoon">{ANSWER_LABEL[reveal.tessera.answer]}</div>
+                  <Card className="p-4 border-lagoon"><Caption>LedgerBot</Caption><div className="text-[18px] mt-1 font-medium text-lagoon">{ANSWER_LABEL[reveal.tessera.answer]}</div>
                     <div className="text-[12px] text-ink-3 mt-1">{reveal.tessera.p != null ? `p = ${reveal.tessera.p.toFixed(3)} · ` : ""}{ms(reveal.tessera.ms)}</div></Card>
                   <Card className="p-4"><Caption>LLM-only (cached)</Caption><div className="text-[18px] mt-1 font-medium text-iris">{reveal.baseline ? `${ANSWER_LABEL[reveal.baseline.answer]} (${reveal.baseline.confidence}%)` : "not run"}</div></Card>
                 </motion.div>
@@ -251,7 +251,7 @@ function Voting() {
         </Card>
         <Card className="p-5">
           <Caption>Twist</Caption>
-          <div className="text-[16px] mt-2">Pairs where you disagreed with each other → Tessera abstained on <span className="font-mono text-[color:var(--amber-ink)]">{twist?.tessera_abstained ?? 0}/{twist?.disagreed ?? 0}</span> of them.</div>
+          <div className="text-[16px] mt-2">Pairs where you disagreed with each other → LedgerBot abstained on <span className="font-mono text-[color:var(--amber-ink)]">{twist?.tessera_abstained ?? 0}/{twist?.disagreed ?? 0}</span> of them.</div>
           <Button className="mt-4" onClick={learn} disabled={learning || !reveal} kbd="L">{learning ? "Retraining…" : "Learn from your votes"}</Button>
           {learned?.reason && <p className="mt-3 text-sm text-ink-2">{learned.reason}</p>}
           {learned && learned.labels_added > 0 && (

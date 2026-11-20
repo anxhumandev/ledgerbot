@@ -75,7 +75,7 @@ export default function DialScene() {
             format={(v) => `${(v * 100).toFixed(v < 0.01 ? 2 : 1)}%`} />
           {!row.certifiable && (
             <div className="mt-4 text-center text-[14px] text-[color:var(--amber-ink)] max-w-[340px]">
-              Not certifiable with {groupIN(row.cal_units_total)} audited property pairs: needs ≥ {groupIN(row.n_min)} clean auto-merges. Tessera refuses to auto-merge rather than pretend.
+              Not certifiable with {groupIN(row.cal_units_total)} audited property pairs: needs ≥ {groupIN(row.n_min)} clean auto-merges. LedgerBot refuses to auto-merge rather than pretend.
             </div>
           )}
         </div>

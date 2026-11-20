@@ -87,9 +87,9 @@ export default function Mess() {
             ))}
           </Card>
         </motion.div>
-        {/* RIGHT: Tessera */}
+        {/* RIGHT: LedgerBot */}
         <motion.div animate={right} className="min-h-0 flex flex-col">
-          <div className="flex items-baseline justify-between mb-2"><div className="text-[20px] font-medium text-lagoon">Tessera</div><div className="text-[13px] text-ink-3">one card per hotel · one row per real room</div></div>
+          <div className="flex items-baseline justify-between mb-2"><div className="text-[20px] font-medium text-lagoon">LedgerBot</div><div className="text-[13px] text-ink-3">one card per hotel · one row per real room</div></div>
           <div className={cx("flex-1 min-h-0 overflow-y-auto scroll-quiet grid grid-cols-2 gap-3 content-start pr-1", flash?.side === "right" && (flash.ok ? "ring-2 ring-sage rounded-card" : "ring-2 ring-clay rounded-card"))}>
             {data.cards.map((c: any, i: number) => (
               <Card key={c.tessera_id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ ...T, delay: i * 0.04 }} className="p-3">

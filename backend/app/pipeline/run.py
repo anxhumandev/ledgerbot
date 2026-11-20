@@ -323,7 +323,7 @@ def _auto_only_groups(rid, pairs, band, alias, supplier_of, p):
 
 def report(s: dict) -> None:
     b, e, r = s["blocking"], s["evals"], s["risk"]
-    print("\n================ TESSERA METRICS REPORT ================")
+    print("\n================ LEDGERBOT METRICS REPORT ================")
     print(f"world={s['world']} records={len(s['norms'])} candidate pairs={len(s['pairs'])}")
     print(f"Blocking  recall={b['recall']:.4f}  reduction={b['reduction_ratio']:.5f}  by_source={b['by_source']}")
     print(f"Matcher   test AUC={e['auc_test']:.4f}")

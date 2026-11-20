@@ -1,4 +1,4 @@
-"""Launch the Tessera API and Vite together. Run with the project's virtualenv."""
+"""Launch the LedgerBot API and Vite together. Run with the project's virtualenv."""
 import os
 from pathlib import Path
 import shutil

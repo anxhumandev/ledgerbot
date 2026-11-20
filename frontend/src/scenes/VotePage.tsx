@@ -106,7 +106,7 @@ export default function VotePage() {
   return (
     <div className="min-h-full bg-paper px-4 py-5 overflow-y-auto" style={{ height: "100%" }}>
       <div className="flex items-center justify-between">
-        <div className="font-serif text-[26px]">Tessera</div>
+        <div className="font-serif text-[26px]">LedgerBot</div>
         <div className="text-[14px] text-ink-3">{nick}</div>
       </div>
       {message && <p role="status" className="mt-4 text-sm text-ink-2">{message}</p>}
@@ -154,7 +154,7 @@ export default function VotePage() {
                 className={`mt-4 rounded-2xl p-5 ${mine === reveal.truth ? "bg-sage-soft" : "bg-clay-soft"}`}>
                 <div className="text-[22px] font-medium">{mine === reveal.truth ? "Correct ✓" : mine ? "Not quite" : "No vote"}</div>
                 <div className="text-[16px] mt-1">Answer: {LABEL[reveal.truth]}</div>
-                <div className="text-[16px] text-lagoon mt-1">Tessera: {LABEL[reveal.tessera.answer]}</div>
+                <div className="text-[16px] text-lagoon mt-1">LedgerBot: {LABEL[reveal.tessera.answer]}</div>
               </motion.div>
             )}
           </AnimatePresence>

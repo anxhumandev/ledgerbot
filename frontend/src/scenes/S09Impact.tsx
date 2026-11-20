@@ -44,7 +44,7 @@ function Replay({ r, running, onRun }: { r: any; running: boolean; onRun: () => 
   const arms = r?.arms;
   return (
     <div className="h-full flex flex-col gap-5">
-      {[["raw", "Cheapest-wins + raw shelf", "text-ink-2"], ["tessera", "Tessera: expected value + deduplicated shelf", "text-lagoon"]].map(([k, label, tone]) => (
+      {[["raw", "Cheapest-wins + raw shelf", "text-ink-2"], ["tessera", "LedgerBot: expected value + deduplicated shelf", "text-lagoon"]].map(([k, label, tone]) => (
         <Card key={k} className="p-6">
           <div className={`text-[20px] font-medium ${tone}`}>{label}</div>
           <div className="grid grid-cols-6 gap-6 mt-3">

@@ -42,7 +42,7 @@ export default function ColdOpen() {
         <AnimatePresence>
           {folded && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...T, delay: 0.7 }} className="text-[18px] text-ink-2 text-center">
-              Tessera turns supplier chaos into one trustworthy shelf.
+              LedgerBot turns supplier chaos into one trustworthy shelf.
             </motion.p>
           )}
         </AnimatePresence>
