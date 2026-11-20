@@ -45,13 +45,15 @@ def _score_candidates(n_new: dict, vec: np.ndarray, hashes=None, topk: int = blo
 
 
 def _review_reason(ex: dict) -> str:
-    pos = [i["label"] for i in ex["items"] if i["value"] > 0][:2]
-    neg = [i["label"] for i in ex["items"] if i["value"] < 0][:2]
+    # data-quality terms are not evidence a human can act on, so they stay out of the sentence
+    items = [i for i in ex["items"] if i["group"] != "quality"]
+    pos = [i["label"] for i in items if i["value"] > 0][:2]
+    neg = [i["label"] for i in items if i["value"] < 0][:2]
     if pos and neg:
-        return f"I'm not sure, sending to a human: {' and '.join(pos).lower()}, but {' and '.join(neg).lower()}."
+        return f"I'm not sure, sending to a human. For a match: {', '.join(pos)}. Against: {', '.join(neg)}."
     if neg:
-        return f"I'm not sure, sending to a human: {' and '.join(neg).lower()}."
-    return "I'm not sure, sending to a human: evidence is mixed."
+        return f"I'm not sure, sending to a human. Against a match: {', '.join(neg)}."
+    return "I'm not sure, sending to a human: the evidence is mixed."
 
 
 # ---------------------------------------------------------------- Break-It trace
@@ -70,11 +72,11 @@ def presets() -> list[dict]:
     addr_r = s1_of(addr["tessera_id"])
     hil = next(h for h in hotels.values() if h["name"] == "Hilton Dubai Jumeirah")
     hil_r = s1_of(hil["tessera_id"])
-    lat8, lng8 = addr_r["lat"] + 800 / 111_320.0, addr_r["lng"]
+    lat8, lng8 = addr_r["lat"] + 400 / 111_320.0, addr_r["lng"]
     return [
         {"id": "misspelled", "label": "Misspelled", "record": {"name": "Atlantiss The Plam Resortt", "address": palm["address"],
          "lat": palm["lat"], "lng": palm["lng"], "phone": palm["phone"], "room_name": "Deluxe King Room – Sea View"}},
-        {"id": "wrong_pin", "label": "Wrong pin (800 m off)", "record": {"name": addr_r["name"], "address": None,
+        {"id": "wrong_pin", "label": "Wrong pin (400 m off)", "record": {"name": addr_r["name"], "address": None,
          "lat": round(lat8, 6), "lng": lng8, "phone": None, "room_name": "Deluxe King Burj Khalifa View"}},
         {"id": "sister", "label": "Sister property", "record": {"name": "Atlantis Royal Resort Dubai", "address": None,
          "lat": royal["lat"], "lng": royal["lng"], "phone": None, "room_name": "Suite King Sea View"}},

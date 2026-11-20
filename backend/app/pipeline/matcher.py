@@ -125,7 +125,8 @@ def explain(x: np.ndarray, contrib: np.ndarray, na: dict, nb: dict, p: float, de
             else:
                 label = "Different phone numbers"
         elif g == "address":
-            label = f"Address overlap {v('addr_jacc'):.0%}"
+            label = ("Address missing on one side" if not (na.get("addr_tokens") and nb.get("addr_tokens"))
+                     else f"Address overlap {v('addr_jacc'):.0%}")
         elif g == "stars":
             label = "Same star rating" if v("star_diff") == 0 else f"Star mismatch ({na.get('stars')}★ vs {nb.get('stars')}★)"
         elif g == "photos":

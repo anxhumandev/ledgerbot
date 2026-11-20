@@ -81,7 +81,7 @@ PRICE_JUMP_COST_INR = 900.0  # agent credit when price changes at booking
 RISK_DELTA = 0.05
 RISK_ALPHA_GRID = [0.001, 0.0025, 0.005, 0.01, 0.02, 0.05]
 DEFAULT_ALPHA = 0.01
-DEFAULT_BETA = 0.02  # max share of true matches lost to auto-reject
+DEFAULT_BETA = 0.01  # max share of true matches lost to auto-reject (1% keeps a thin review band at alpha = 1%)
 REVIEW_MINUTES_PER_PAIR = 1.5
 REVIEW_COST_INR_PER_HOUR = 450.0
 PAIRS_PER_MONTH = 1_200_000  # illustrative volume for the ops-cost stat

@@ -1,5 +1,6 @@
 import { useApp } from "../app/store";
 import { post } from "./api";
+import { RECORD_MODE } from "./format";
 
 let resetting = false;
 
@@ -10,7 +11,7 @@ export async function resetDemo() {
   try {
     await post("/demo/reset");
     useApp.getState().bumpEpoch();
-    useApp.getState().showToast("Demo state reset");
+    if (!RECORD_MODE) useApp.getState().showToast("Demo state reset"); // silent on camera
   } catch {
     useApp.getState().showToast("Reset failed. Check the backend and try again.", "clay");
   } finally {

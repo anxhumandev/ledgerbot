@@ -8,7 +8,7 @@ import { groupIN, pct, SUPPLIERS } from "../lib/format";
 import { useFetch, useHotkeys } from "../lib/hooks";
 import { useTopic } from "../lib/ws";
 
-type Node = { id: string; supplier: string; cluster: string; x?: number; y?: number; status?: string; until?: number; born?: number };
+type Node = { id: string; supplier: string; cluster: string; x?: number; y?: number; fx?: number; fy?: number; status?: string; until?: number; born?: number };
 const W = 1060, H = 640;
 
 export default function Onboarding() {
@@ -51,6 +51,12 @@ export default function Onboarding() {
     return () => clearInterval(id);
   }, [status]);
   useEffect(() => {
+    // when onboarding finishes, glide out to frame every cluster, new NovaBeds hotels included
+    if (status !== "done") return;
+    const t = setTimeout(() => fgRef.current?.zoomToFit(900, 40), 600);
+    return () => clearTimeout(t);
+  }, [status]);
+  useEffect(() => {
     const fg = fgRef.current;
     if (!fg) return;
     fg.d3Force("charge")?.strength(-6);
@@ -73,10 +79,16 @@ export default function Onboarding() {
         until: Date.now() + 1800, born: Date.now(), x: minX - 60, y: offset % 201 - 100 };
       const links = [...graph.current.links];
       if ((d.decision === "auto_merge" || d.decision === "llm") && nodes.some((n) => n.id === d.link_to)) links.push({ source: d.record_id, target: d.link_to });
-      if (d.decision === "new_cluster") { node.x = offset % 501 - 250; node.y = (offset >>> 4) % 401 - 200; }
+      if (d.decision === "new_cluster") {
+        // a brand-new hotel gets its own fixed spot inside the current constellation
+        const ys = nodes.map((n) => n.y ?? 0);
+        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+        node.x = node.fx = x0 + ((offset % 1000) / 1000) * (x1 - x0);
+        node.y = node.fy = y0 + (((offset >>> 10) % 1000) / 1000) * (y1 - y0);
+      }
       if (d.decision === "review" && d.tessera_id) {
         const anchor = nodes.find((n) => n.cluster === d.tessera_id);
-        if (anchor) { node.x = (anchor.x ?? 0) + 18; node.y = (anchor.y ?? 0) + 18; }
+        if (anchor) { node.x = node.fx = (anchor.x ?? 0) + 14; node.y = node.fy = (anchor.y ?? 0) + 14; }
       }
       graph.current = { nodes: [...nodes, node], links };
       setGraphData(graph.current);
@@ -191,9 +203,9 @@ export default function Onboarding() {
           <Card className="p-4 flex-1 min-h-0 overflow-hidden">
             <Caption>Latest decisions</Caption>
             <div className="mt-2 space-y-2">
-              <AnimatePresence initial={false} mode="popLayout">
-                {last.map((d) => (
-                  <motion.div key={d.record_id} layout initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={T} className="text-[13px]">
+              {/* plain list: decisions arrive every ~40 ms, faster than exit animations can finish */}
+              {last.map((d) => (
+                  <motion.div key={d.record_id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={T} className="text-[13px]">
                     <div className="truncate text-ink">{d.name}</div>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <Chip variant={d.decision === "auto_merge" ? "sage" : d.decision === "llm" ? "iris" : d.decision === "review" ? "amber" : "lagoon"}>
@@ -203,7 +215,6 @@ export default function Onboarding() {
                     </div>
                   </motion.div>
                 ))}
-              </AnimatePresence>
             </div>
           </Card>
         </div>
@@ -212,7 +223,16 @@ export default function Onboarding() {
             nodeCanvasObject={drawNode} nodeCanvasObjectMode={() => "replace"} onRenderFramePre={drawHulls}
             linkColor={() => "rgba(14,94,111,0.18)"} linkWidth={0.6} enableNodeDrag={false} enableZoomInteraction={false}
             enablePanInteraction={false} cooldownTime={4000} d3VelocityDecay={0.35} warmupTicks={60}
-            onEngineStop={() => { if (!fitted.current) { fitted.current = true; fgRef.current?.zoomToFit(600, 40); } }} />
+            onEngineStop={() => {
+              // fit once real data is on the canvas (not the empty first render), then hold the camera still
+              if (!fitted.current && graph.current.nodes.length) {
+                fitted.current = true;
+                // pin the settled constellation: streamed decisions reheat the simulation ~25x/s, and without
+                // pins the clusters keep repelling each other out of frame. Only NovaBeds nodes move from here on.
+                for (const n of graph.current.nodes) { n.fx = n.x; n.fy = n.y; }
+                fgRef.current?.zoomToFit(600, 40);
+              }
+            }} />
           <div className="absolute left-4 bottom-3 flex gap-2 flex-wrap">
             {["S1", "S2", "S3", "S4", "S5", "S6"].map((s) => <SupplierChip key={s} code={s} short />)}
             <span className="text-[12px] text-ink-3 self-center ml-2">Dubai shown · counters cover all {feed.cities.length} cities</span>

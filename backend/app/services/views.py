@@ -81,6 +81,17 @@ def cold_open() -> dict:
 
 
 # ---------------------------------------------------------------- scene 01 listings
+def raw_shelf_room_name(o: dict) -> str:
+    """What today's raw shelf shows: the name of the supplier room the rate is attached to. When a feed attaches
+    a rate to the wrong room (the rate's own text describes a different room), the raw shelf shows the wrong room;
+    Tessera reads the rate's own text instead."""
+    from app.pipeline.normalize import parse_room, room_identity
+    attached = o.get("raw_room_name")
+    if attached and room_identity(parse_room(attached)) != room_identity(parse_room(o["room_name"])):
+        return attached
+    return o["room_name"]
+
+
 AREA_NB = {"marina": ["Dubai Marina"], "downtown": ["Downtown"], "jbr": ["JBR"], "palm": ["Palm Jumeirah"]}
 
 
@@ -122,7 +133,7 @@ def listings(area: str = "marina", strategy: str = "cheapest", nights: int = 3, 
             for s in g["slots"]:
                 for o in s["offers"]:
                     raw_rows.append({"offer_id": o["offer_id"], "supplier": o["supplier"],
-                                     "hotel_name": DEMO.rec_by_id[o["record_id"]]["name"], "room_name": o["room_name"],
+                                     "hotel_name": DEMO.rec_by_id[o["record_id"]]["name"], "room_name": raw_shelf_room_name(o),
                                      "board_raw": o["board_raw"], "cancellation_raw": o["cancellation_raw"],
                                      "price": o["price"] * nights, "_slot": (h["tessera_id"], gi, s["board"], s["refundable"]),
                                      "_target_slot": target is not None and h["tessera_id"] == target["tessera_id"] and gi == target["group"]
