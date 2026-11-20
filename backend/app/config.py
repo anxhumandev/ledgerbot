@@ -1,0 +1,89 @@
+"""Central configuration. Everything tunable lives here; secrets come from .env only."""
+from __future__ import annotations
+
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+ROOT_DIR = BACKEND_DIR.parent
+load_dotenv(ROOT_DIR / ".env")
+
+DATA_DIR = BACKEND_DIR / "data"
+WORLD_DIR = DATA_DIR / "world"
+CACHE_DIR = DATA_DIR / "cache"
+FRONTEND_PUBLIC = ROOT_DIR / "frontend" / "public"
+IMG_BASE_DIR = FRONTEND_PUBLIC / "img" / "base"
+IMG_VAR_DIR = FRONTEND_PUBLIC / "img" / "var"
+
+SEED = int(os.getenv("SEED", "42"))
+# "demo" = Dubai only; "large" = Dubai + 4 more cities. The risk dial needs the large
+# world's calibration volume to certify alpha < 1% (see README "Why large by default").
+WORLD = os.getenv("WORLD", "large").lower()
+
+# ---------------------------------------------------------------- LLM
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "").strip()
+LLM_ENABLED = os.getenv("LLM_ENABLED", "true").lower() == "true" and bool(ANTHROPIC_API_KEY)
+ADJUDICATOR_MODEL = os.getenv("ADJUDICATOR_MODEL", "claude-haiku-5-5")
+BASELINE_MODEL = os.getenv("BASELINE_MODEL", "claude-opus-5-5")
+TEACHER_MODEL = os.getenv("TEACHER_MODEL", "claude-opus-5-5")
+
+# USD per million tokens. Source: Anthropic model pricing table (cached 2026-10-06),
+# first-party API rates. Update here if pricing changes.
+LLM_PRICING_USD_PER_MTOK = {
+    "claude-haiku-5-5": {"input": 0.10, "output": 0.50},
+    "claude-opus-5-5": {"input": 4.00, "output": 20.00},
+    "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
+}
+USD_TO_INR = float(os.getenv("USD_TO_INR", "84.0"))
+
+# ---------------------------------------------------------------- Suppliers
+SUPPLIERS = {
+    "S1": {"name": "DirectConnect", "persona": "TBO direct contracts", "color": "#0E5E6F",
+           "take_rate": 0.14, "profile": {"confirm": 0.993, "price_jump": 0.005, "latency": 1.2}},
+    "S2": {"name": "GlobalBeds", "persona": "Big bed bank", "color": "#8A6D3B",
+           "take_rate": 0.08, "profile": {"confirm": 0.975, "price_jump": 0.04, "latency": 2.8}},
+    "S3": {"name": "IberiaBeds", "persona": "Spanish wholesaler", "color": "#9C4F6B",
+           "take_rate": 0.09, "profile": {"confirm": 0.986, "price_jump": 0.015, "latency": 1.9}},
+    "S4": {"name": "LuxeCollection", "persona": "Luxury specialist", "color": "#3F5F8F",
+           "take_rate": 0.10, "profile": {"confirm": 0.990, "price_jump": 0.01, "latency": 1.5}},
+    "S5": {"name": "RapidStay", "persona": "Aggregator of aggregators", "color": "#6E7B4E",
+           "take_rate": 0.07, "profile": {"confirm": 0.958, "price_jump": 0.06, "latency": 3.9}},
+    "S6": {"name": "NovaBeds", "persona": "New supplier (live onboarding)", "color": "#B4683A",
+           "take_rate": 0.085, "profile": {"confirm": 0.980, "price_jump": 0.025, "latency": 2.2}},
+}
+ACTIVE_SUPPLIERS = ["S1", "S2", "S3", "S4", "S5"]
+
+# ---------------------------------------------------------------- Offer selection (EV)
+FAILURE_COST_INR = float(os.getenv("FAILURE_COST_INR", "2500"))
+# P(book) = sigmoid(a - b*price_rel + c*refundable + d*pay_later)
+PBOOK = {"a": 1.2, "b": 6.0, "c": 0.35, "d": 0.15}
+PRICE_JUMP_COST_INR = 900.0  # agent credit when price changes at booking
+
+# ---------------------------------------------------------------- Risk control
+RISK_DELTA = 0.05
+RISK_ALPHA_GRID = [0.001, 0.0025, 0.005, 0.01, 0.02, 0.05]
+DEFAULT_ALPHA = 0.01
+DEFAULT_BETA = 0.01  # max share of true matches lost to auto-reject
+REVIEW_MINUTES_PER_PAIR = 1.5
+REVIEW_COST_INR_PER_HOUR = 450.0
+PAIRS_PER_MONTH = 1_200_000  # illustrative volume for the ops-cost stat
+
+# ---------------------------------------------------------------- Ranking
+RANK_WEIGHTS = {"margin": 0.25, "platinum": 0.15, "risk": 0.4}
+KENDALL_GUARDRAIL = 0.8
+
+# ---------------------------------------------------------------- Simulation
+BOOKINGS_PER_SEC = 15
+REPLAY_N = 50_000
+TBO_ANNUAL_HOTEL_GTV_INR = 31_500 * 1e7  # ₹31,500 Cr (TBO Q2 FY27 results)
+TBO_GROSS_MARGIN = 0.06
+ONBOARD_PACE_MS = int(os.getenv("ONBOARD_PACE_MS", "40"))
+PUBLIC_HOST = os.getenv("PUBLIC_HOST", "")
+FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5173"))
+
+
+def ensure_dirs() -> None:
+    for d in (WORLD_DIR, CACHE_DIR, IMG_BASE_DIR, IMG_VAR_DIR):
+        d.mkdir(parents=True, exist_ok=True)

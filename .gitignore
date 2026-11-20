@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+frontend/dist/
+backend/data/world/*
+!backend/data/world/.gitkeep
+backend/data/cache/*
+!backend/data/cache/.gitkeep
+!backend/data/cache/baseline_results.json
+!backend/data/cache/adjudicator.json
+!backend/data/cache/dictionary_learned.json
+frontend/public/img/var/
+frontend/public/img/base/
+.pytest_cache/
+*.log
