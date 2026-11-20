@@ -21,6 +21,8 @@ PHASH_MAX_HAMMING = 8
 def embedder():
     import os
     os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+    if (config.CACHE_DIR / "hf").exists() and any((config.CACHE_DIR / "hf").iterdir()):
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")  # model cached: never touch the network
     from sentence_transformers import SentenceTransformer
     return SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2", cache_folder=str(config.CACHE_DIR / "hf"))
 

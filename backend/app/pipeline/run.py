@@ -251,7 +251,8 @@ def build(verbose: bool = True) -> dict:
                  "cal_units": int(len(set(cal_blocks.tolist()))), "test_units": int(len(set(test_blocks.tolist()))),
                  "test_n": int(len(y_test))},
         "cal_raw": cal_raw, "cal_y": yc, "test_raw": test_raw, "test_y": y_test,
-        "cal_blocks": cal_blocks, "test_blocks": test_blocks,
+        "cal_blocks": cal_blocks, "test_blocks": test_blocks, "cal_X": Xc,
+        "train_X": Xall, "train_y": yall, "train_w": wall,
         "test_band_counts": {k: int((test_band == v).sum()) for k, v in (("reject", 0), ("uncertain", 1), ("accept", 2))},
         "blocking": block, "evals": evals, "routes": dict(routes),
     }
