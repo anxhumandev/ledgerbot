@@ -79,6 +79,7 @@ class Demo:
     # ------------------------------------------------------------------ reset
     def reset(self, initial: bool = False):
         with self.lock:
+            self.review_log = {}  # analyst decisions on the review queue (gold labels for the next retrain)
             self.state = dict(self.base_state)
             self.matcher = self.base_matcher
             self.dense_curve = self.base_curve

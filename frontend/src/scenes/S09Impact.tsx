@@ -51,7 +51,7 @@ function Replay({ r, running, onRun }: { r: any; running: boolean; onRun: () => 
             {LANES.map((l) => (
               <div key={l.key}>
                 <Caption>{l.label}</Caption>
-                <div className={`font-mono text-[38px] leading-tight ${k === "tessera" ? "text-ink" : "text-ink-2"}`}>
+                <div className={`font-sans font-semibold tabular text-[38px] leading-tight ${k === "tessera" ? "text-ink" : "text-ink-2"}`}>
                   <Ticker value={arms ? arms[k][l.key] : 0} format={l.fmt} />
                 </div>
               </div>
@@ -61,18 +61,18 @@ function Replay({ r, running, onRun }: { r: any; running: boolean; onRun: () => 
       ))}
       <div className="flex-1 flex items-center justify-center">
         <AnimatePresence mode="wait">
-          {!r && !running && <motion.div key="hint" exit={{ opacity: 0 }} className="flex flex-col items-center gap-3"><Button onClick={onRun} kbd="Space" className="!text-[18px] !px-6 !py-3">Replay 50,000 searches</Button><span className="text-[14px] text-ink-3">simulated, at about 1000× speed</span></motion.div>}
+          {!r && !running && <motion.div key="hint" exit={{ opacity: 0 }} className="flex flex-col items-center gap-3"><Button onClick={onRun} kbd="Space" className="!text-[18px] !px-6 !py-3">Replay 50,000 searches</Button><span className="text-[15px] text-ink-3">simulated, at about 1000× speed</span></motion.div>}
           {r && (
             <motion.div key="fin" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T} className="text-center">
-              <div className="font-mono text-[72px] leading-none text-[color:var(--saffron-ink)]">
+              <div className="font-sans font-semibold tabular text-[72px] leading-none text-[color:var(--saffron-ink)]">
                 <Ticker value={r.lift_gp_per_search * 100} format={(v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`} />
               </div>
               <div className="text-[18px] text-ink-2 mt-2">gross profit per search (simulated) · {groupIN(r.done)} of {groupIN(r.n)} searches replayed</div>
               {!running && (
                 <div className="mt-4 inline-flex items-center gap-3 rounded-full bg-saffron-soft px-5 py-2">
-                  <span className="text-[13px] uppercase tracking-[0.08em] text-[color:var(--saffron-ink)] font-medium">Annualized at TBO hotel scale (illustrative)</span>
-                  <span className="font-mono text-[22px] text-ink">{formatINR(r.annualized_inr_illustrative, { compact: true })}</span>
-                  <span className="text-[12px] text-ink-3">= {r.formula}</span>
+                  <span className="text-[14px] uppercase tracking-[0.08em] text-[color:var(--saffron-ink)] font-medium">Annualized at TBO hotel scale (illustrative)</span>
+                  <span className="font-sans font-semibold tabular text-[22px] text-ink">{formatINR(r.annualized_inr_illustrative, { compact: true })}</span>
+                  <span className="text-[13px] text-ink-3">= {r.formula}</span>
                 </div>
               )}
               {!running && !RECORD_MODE && <div className="mt-4"><Button variant="ghost" onClick={onRun} kbd="Space">Run the replay again</Button></div>}

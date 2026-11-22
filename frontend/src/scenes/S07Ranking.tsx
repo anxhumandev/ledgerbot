@@ -16,12 +16,12 @@ function Column({ persona, mode }: { persona: string; mode: Mode }) {
         <div className="w-14 h-14 rounded-full bg-lagoon text-white font-serif text-[30px] flex items-center justify-center">{p.initial}</div>
         <div>
           <div className="text-[20px] font-medium">{p.name}, {p.origin}</div>
-          <div className="text-[14px] text-ink-2">{p.profile}</div>
+          <div className="text-[15px] text-ink-2">{p.profile}</div>
         </div>
         <div className="ml-auto text-right">
           <Caption>Kendall τ vs relevance</Caption>
-          <div className="font-mono text-[22px]">{data.kendall_tau.toFixed(2)}</div>
-          {data.business_scale < 1 && <div className="text-[11px] text-[color:var(--amber-ink)]">guardrail scaled business weights ×{data.business_scale}</div>}
+          <div className="font-sans font-semibold tabular text-[22px]">{data.kendall_tau.toFixed(2)}</div>
+          {data.business_scale < 1 && <div className="text-[13px] text-[color:var(--amber-ink)]">guardrail scaled business weights ×{data.business_scale}</div>}
         </div>
       </Card>
       <div className="flex flex-col gap-2">
@@ -32,15 +32,15 @@ function Column({ persona, mode }: { persona: string; mode: Mode }) {
             <Photo src={r.hero} name={r.name} className="w-[64px] h-[64px] rounded-xl flex-none" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-[16px] font-medium truncate">{r.name}</span>
-                <span className="text-[12px] text-ink-3 whitespace-nowrap">{"★".repeat(r.stars)} · {r.neighbourhood}</span>
+                <span className="text-[17px] font-medium truncate">{r.name}</span>
+                <span className="text-[13px] text-ink-3 whitespace-nowrap">{"★".repeat(r.stars)} · {r.neighbourhood}</span>
               </div>
               <div className="mt-1 flex flex-wrap gap-1.5">
                 {r.chips.map((c: string) => <Chip key={c} variant={c.startsWith("Platinum") ? "saffron" : c.includes("confirms") ? "lagoon" : "neutral"}>{c}</Chip>)}
               </div>
             </div>
             <div className="text-right">
-              <div className="font-mono text-[16px]">{formatINR(r.price)}</div>
+              <div className="font-mono text-[17px]">{formatINR(r.price)}</div>
               <div className="mt-1"><SupplierChip code={r.supplier} short /></div>
             </div>
           </motion.div>
@@ -63,7 +63,7 @@ export default function Ranking() {
         <Column persona="mark" mode={mode} />
       </div>
       {data?.proof && (
-        <div className="absolute right-16 bottom-10 bg-surface/90 border border-line rounded-xl px-4 py-2 text-[13px] text-ink-2">
+        <div className="absolute right-16 bottom-10 bg-surface/90 border border-line rounded-xl px-4 py-2 text-[14px] text-ink-2">
           Position-bias correction · NDCG@10 vs true relevance: naive <span className="font-mono text-ink">{data.proof.ndcg_naive.toFixed(3)}</span> → IPW <span className="font-mono text-lagoon">{data.proof.ndcg_ipw.toFixed(3)}</span>
           <span className="text-ink-3"> · η̂ = {data.proof.eta.toFixed(2)} from {data.proof.n_randomized} randomized sessions · </span><Cite>Unbiased LTR (Joachims et al., WSDM 2017) · simulated logs</Cite>
         </div>

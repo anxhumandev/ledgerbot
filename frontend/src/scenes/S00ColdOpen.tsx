@@ -6,12 +6,12 @@ import { useFetch, useHotkeys } from "../lib/hooks";
 
 function RawRow({ r }: { r: any }) {
   return (
-    <div className="grid grid-cols-[150px_300px_330px_190px_1fr_120px] items-center gap-4 px-6 h-[54px] text-[15px]">
+    <div className="grid grid-cols-[150px_300px_330px_190px_1fr_120px] items-center gap-4 px-6 h-[54px] text-[16px]">
       <SupplierChip code={r.supplier} />
       <span className="truncate text-ink">{r.hotel_name}</span>
-      <span className="truncate font-mono text-[14px] text-ink-2">{r.room_name}</span>
-      <span className="truncate font-mono text-[14px] text-ink-2">{r.board_raw}</span>
-      <span className="truncate text-[14px] text-ink-3">{r.cancellation_raw}</span>
+      <span className="truncate font-mono text-[15px] text-ink-2">{r.room_name}</span>
+      <span className="truncate font-mono text-[15px] text-ink-2">{r.board_raw}</span>
+      <span className="truncate text-[15px] text-ink-3">{r.cancellation_raw}</span>
       <span className="text-right font-mono text-ink">{formatINR(r.price)}</span>
     </div>
   );
@@ -36,7 +36,7 @@ export default function ColdOpen() {
         <Button variant="ghost" onClick={() => setFolded((f) => !f)} kbd="Space">{folded ? "Show the 9 raw listings" : "Fold into one card"}</Button>
       </div>}
       <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T}
-        className="font-serif text-[64px] leading-[1.05] tracking-[-0.01em] text-ink text-center mt-2">
+        className="font-serif text-[52px] leading-[1.12] tracking-[-0.015em] text-ink text-center mt-2">
         {folded ? "Nine listings. One room." : "Nine listings."}
       </motion.h1>
       <div className="h-[34px] mt-3">
@@ -53,7 +53,7 @@ export default function ColdOpen() {
           <AnimatePresence>
             {!folded && (
               <motion.div key="rows" exit={{ height: 94, opacity: 0, transition: { height: { ...T, duration: REDUCE_MOTION ? 0 : 0.5 }, opacity: { duration: 0.2, delay: REDUCE_MOTION ? 0 : 0.5 } } }} className="absolute inset-x-0 top-0 bg-surface border border-line rounded-card shadow-card overflow-hidden">
-                <div className="px-6 h-10 flex items-center text-[12px] uppercase tracking-[0.08em] text-ink-3 border-b border-line bg-surface-2">
+                <div className="px-6 h-10 flex items-center text-[13px] uppercase tracking-[0.08em] text-ink-3 border-b border-line bg-surface-2">
                   Raw supplier feed · {data.hotel.name} · same physical room
                 </div>
                 {data.rows.map((r: any, i: number) => (
@@ -84,14 +84,14 @@ export default function ColdOpen() {
                     <div className="mt-6 rounded-2xl bg-saffron-soft p-4">
                       <div className="flex items-baseline justify-between">
                         <div>
-                          <div className="text-[12px] uppercase tracking-[0.08em] text-[color:var(--saffron-ink)] font-medium">Best offer · {data.best.label}</div>
-                          <div className="font-mono text-[34px] text-ink mt-1">{formatINR(best.price)}<span className="text-[15px] text-ink-3"> /night</span></div>
+                          <div className="text-[13px] uppercase tracking-[0.08em] text-[color:var(--saffron-ink)] font-medium">Best offer · {data.best.label}</div>
+                          <div className="font-sans font-semibold tabular text-[34px] text-ink mt-1">{formatINR(best.price)}<span className="text-[16px] text-ink-3"> /night</span></div>
                         </div>
                         <SupplierChip code={best.supplier} />
                       </div>
-                      <div className="text-[14px] text-ink-2 mt-1">{data.best.why}</div>
+                      <div className="text-[15px] text-ink-2 mt-1">{data.best.why}</div>
                     </div>
-                    <div className="mt-4 text-[15px] text-lagoon font-medium">+{data.alternatives} alternatives across {data.n_slots} offer slots</div>
+                    <div className="mt-4 text-[16px] text-lagoon font-medium">+{data.alternatives} alternatives across {data.n_slots} offer slots</div>
                   </div>
                 </motion.div>
               </motion.div>
@@ -106,7 +106,7 @@ export default function ColdOpen() {
             <SoftStat a={s.dubai_raw_records} b={s.dubai_hotels} la="raw supplier records" lb="unique hotels" />
             <SoftStat a={s.dubai_room_names} b={s.dubai_room_groups} la="supplier room names" lb="real rooms" />
             <div className="text-center">
-              <div className="font-mono text-[44px] text-[color:var(--sage-ink)] leading-none"><Ticker value={s.violations} /></div>
+              <div className="font-sans font-semibold tabular text-[44px] text-[color:var(--sage-ink)] leading-none"><Ticker value={s.violations} /></div>
               <Caption className="mt-2">consistency violations</Caption>
             </div>
           </motion.div>
@@ -119,7 +119,7 @@ export default function ColdOpen() {
 function SoftStat({ a, b, la, lb }: { a: number; b: number; la: string; lb: string }) {
   return (
     <div className="text-center">
-      <div className="font-mono text-[44px] leading-none text-ink">
+      <div className="font-sans font-semibold tabular text-[44px] leading-none text-ink">
         <Ticker value={a} format={(v) => groupIN(v)} /> <span className="text-ink-3">→</span> <span className="text-lagoon"><Ticker value={b} format={(v) => groupIN(v)} /></span>
       </div>
       <Caption className="mt-2">{la} → {lb} · Dubai</Caption>

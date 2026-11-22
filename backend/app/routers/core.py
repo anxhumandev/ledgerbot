@@ -85,3 +85,38 @@ def metrics():
             "dup_stats": s["dup_stats"], "trust": s["trust"], "ranking_ndcg": DEMO.ranking["ndcg"],
             "risk": {k: v for k, v in s["risk"].items() if k != "curve"}, "curve": s["risk"]["curve"],
             "config": {"alpha": DEMO.alpha, "delta": config.RISK_DELTA, "beta": config.DEFAULT_BETA}}
+
+
+# ---------------------------------------------------------------- analyst tools
+from pydantic import BaseModel  # noqa: E402
+
+from app.services import analyst  # noqa: E402
+
+
+class ReviewDecision(BaseModel):
+    pair_id: str
+    verdict: str
+    seconds: float | None = None
+
+
+@router.get("/review/queue")
+def review_queue(limit: int = 40):
+    return analyst.queue(limit)
+
+
+@router.post("/review/decide")
+def review_decide(body: ReviewDecision):
+    try:
+        return analyst.decide(body.pair_id, body.verdict, body.seconds)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
+@router.post("/review/undo")
+def review_undo(body: ReviewDecision):
+    return analyst.undo(body.pair_id)
+
+
+@router.get("/search")
+def search_hotels(q: str = "", limit: int = 8):
+    return analyst.search(q, limit)

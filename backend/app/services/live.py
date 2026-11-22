@@ -177,7 +177,10 @@ def graph(city: str = "dubai") -> dict:
             continue
         ms = [m for m in h["members"]]
         for m in ms:
-            nodes.append({"id": m, "supplier": DEMO.norm_by_id[m]["supplier"] if m in DEMO.norm_by_id else "S6", "cluster": tid})
+            rec = DEMO.rec_by_id.get(m)
+            nodes.append({"id": m, "supplier": DEMO.norm_by_id[m]["supplier"] if m in DEMO.norm_by_id else "S6", "cluster": tid,
+                          "name": rec["name"] if rec else m, "hotel": h["name"], "neighbourhood": h.get("neighbourhood"),
+                          "stars": h.get("stars"), "size": len(ms)})
         for m in ms[1:]:
             links.append({"source": ms[0], "target": m})
     return {"nodes": nodes, "links": links, "clusters": sum(1 for h in DEMO.hotels.values() if h["city"] == city)}

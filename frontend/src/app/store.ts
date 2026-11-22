@@ -19,6 +19,12 @@ type Listener = (m: WSMsg) => void;
 interface AppState {
   scene: number;
   presenter: boolean;
+  searchOpen: boolean;
+  setSearch: (open: boolean) => void;
+  inspect: string | null; // tessera id the Inspector should open (set by hotel search or a graph click)
+  openInspector: (tid: string) => void;
+  research: boolean;
+  toggleResearch: () => void;
   epoch: number; // bumps on demo reset -> scenes remount
   toast: { id: number; text: string; tone?: string } | null;
   cost: any;
@@ -43,6 +49,12 @@ const initialScene = () => {
 export const useApp = create<AppState>((set, get) => ({
   scene: initialScene(),
   presenter: false,
+  searchOpen: false,
+  setSearch: (open) => set({ searchOpen: open }),
+  inspect: null,
+  openInspector: (tid) => { set({ inspect: tid, searchOpen: false }); get().setScene(3); },
+  research: false,
+  toggleResearch: () => set({ research: !get().research }),
   epoch: 0,
   toast: null,
   cost: null,

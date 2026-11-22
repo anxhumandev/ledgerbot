@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { SCENES, useApp } from "../app/store";
 import { Kbd, T } from "../design/primitives";
-import { ChevronLeft, ChevronRight, ChevronUp, Keyboard, RotateCcw } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, ChevronUp, Keyboard, RotateCcw, Search } from "lucide-react";
 import { resetDemo } from "../lib/demo";
 import { formatINR, RECORD_MODE } from "../lib/format";
 
@@ -14,26 +14,33 @@ export function TopBar() {
   const sc = SCENES[scene];
   const llmOn = llm?.enabled;
   return (
-    <div className="absolute top-0 left-0 right-0 h-14 px-16 flex items-center justify-between border-b border-line/70 z-20 bg-paper/80 backdrop-blur-[2px]">
+    <div className="absolute top-0 left-0 right-0 h-14 px-16 flex items-center justify-between z-20 bg-navy text-white shadow-[0_2px_8px_rgba(1,40,80,.25)]">
       <div className="flex items-center gap-3">
-        <svg width="22" height="22" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="var(--lagoon)" /><g fill="#F7F4EE"><rect x="7" y="7" width="8" height="8" rx="1.5" /><rect x="17" y="7" width="8" height="8" rx="1.5" opacity=".7" /><rect x="7" y="17" width="8" height="8" rx="1.5" opacity=".7" /><rect x="17" y="17" width="8" height="8" rx="1.5" fill="var(--saffron)" /></g></svg>
-        <span className="font-serif text-[26px] leading-none text-ink">LedgerBot</span>
+        <svg width="26" height="26" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#FFFFFF" /><g fill="var(--lagoon)"><rect x="7" y="7" width="8" height="8" rx="1.5" /><rect x="17" y="7" width="8" height="8" rx="1.5" opacity=".55" /><rect x="7" y="17" width="8" height="8" rx="1.5" opacity=".55" /><rect x="17" y="17" width="8" height="8" rx="1.5" fill="var(--saffron)" /></g></svg>
+        <span className="font-serif text-[24px] leading-none text-white">LedgerBot</span>
+        <span className="ml-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-[color:var(--saffron)]">Supply intelligence</span>
       </div>
-      <div className="absolute left-1/2 -translate-x-1/2 text-[14px] text-ink-3">
-        <span className="font-mono">{sc.id}</span><span className="mx-2">·</span><span className="text-ink-2">{sc.title}</span>
+      <div className="absolute left-1/2 -translate-x-1/2 text-[16px] text-white/70">
+        <span className="tabular font-semibold text-white/90">{sc.id}</span><span className="mx-2">·</span><span className="text-white font-medium">{sc.title}</span>
       </div>
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-[13px]" data-tip="LLM spend this session vs. an LLM-only pipeline on the same pairs">
-          <span className="text-iris font-medium">LLM spend</span>
-          <span className="font-mono text-ink">{formatINR(cost?.tessera_llm_spend_inr, { decimals: 2 })}</span>
-          <span className="text-ink-3">vs LLM-only</span>
-          <span className="font-mono text-ink-2">{formatINR(cost?.llm_only_counterfactual_inr, { decimals: 2 })}{cost?.counterfactual_estimated ? " est." : ""}</span>
+        {!RECORD_MODE && (
+          <button onClick={() => useApp.getState().setSearch(true)} title="Find any hotel (Ctrl+K or /)"
+            className="flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1 text-[14px] text-white/90 transition">
+            <Search size={14} />Find a hotel<kbd className="ml-1 text-[12px] px-1.5 rounded bg-white/15">Ctrl K</kbd>
+          </button>
+        )}
+        <div className="flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-[14px]" data-tip="LLM spend this session vs. an LLM-only pipeline on the same pairs">
+          <span className="text-white/75">LLM spend</span>
+          <span className="tabular font-semibold text-white">{formatINR(cost?.tessera_llm_spend_inr, { decimals: 2 })}</span>
+          <span className="text-white/60">vs LLM-only</span>
+          <span className="tabular font-semibold text-[color:var(--saffron)]">{formatINR(cost?.llm_only_counterfactual_inr, { decimals: 2 })}{cost?.counterfactual_estimated ? " est." : ""}</span>
         </div>
-        <div className="flex items-center gap-2 text-[13px] text-ink-3" data-tip={llmOn ? `Adjudicator ${llm?.model}` : `LLM offline: ${llm?.reason ?? "unknown"}`}>
-          <span className="w-2.5 h-2.5 rounded-full" style={{ background: !ws ? "var(--clay)" : llmOn ? "var(--iris)" : "var(--amber)" }} />
+        <div className="flex items-center gap-2 text-[14px] text-white/80" data-tip={llmOn ? `Adjudicator ${llm?.model}` : `LLM offline: ${llm?.reason ?? "unknown"}`}>
+          <span className="w-2.5 h-2.5 rounded-full ring-2 ring-white/30" style={{ background: !ws ? "var(--clay)" : llmOn ? "#B59CFF" : "var(--saffron)" }} />
           {!ws ? "reconnecting" : llmOn ? "LLM on" : "LLM offline"}
         </div>
-        <div className="font-mono text-[14px] text-ink-2">{sc.id} / {SCENES[SCENES.length - 1].id}</div>
+        <div className="tabular text-[15px] text-white/70">{sc.id} / {SCENES[SCENES.length - 1].id}</div>
       </div>
     </div>
   );
@@ -41,7 +48,7 @@ export function TopBar() {
 
 export function Footer() {
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-7 px-16 flex items-center text-[12px] text-ink-3 z-20">
+    <div className="absolute bottom-0 left-0 right-0 h-7 px-16 flex items-center text-[13px] text-ink-3 z-20">
       Synthetic demo data · prices and policies are fictional · LedgerBot prototype for TBO VoyageHack 4.0
       {!RECORD_MODE && <SceneNav />}
     </div>
@@ -63,7 +70,7 @@ function SceneNav() {
     window.addEventListener("keydown", esc);
     return () => { window.removeEventListener("mousedown", close); window.removeEventListener("keydown", esc); };
   }, [open]);
-  const base = "h-6 inline-flex items-center gap-1 rounded-full border text-[12px] disabled:opacity-30 transition";
+  const base = "h-6 inline-flex items-center gap-1 rounded-full border text-[13px] disabled:opacity-30 transition";
   const btn = `${base} border-line bg-surface text-ink-2 hover:bg-surface-2 hover:text-ink`;
   const primary = `${base} border-lagoon bg-lagoon text-white hover:brightness-110`;
   const last = scene === SCENES.length - 1;
@@ -82,14 +89,15 @@ function SceneNav() {
         {last ? "Last scene" : <>Next: {SCENES[scene + 1].title}</>}<ChevronRight size={14} />
       </button>
       <button className={`${btn} px-2.5 ml-1`} onClick={togglePresenter} title="Show this scene's keys (P)"><Keyboard size={12} />Keys</button>
+      <button className={`${btn} px-2.5`} onClick={() => useApp.getState().toggleResearch()} title="How this scene works and the research behind it (I)"><BookOpen size={12} />Method & research</button>
       <AnimatePresence>
         {open && (
           <motion.div role="menu" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={T}
             className="absolute bottom-8 right-0 w-[260px] rounded-2xl border border-line bg-surface shadow-card p-1.5 z-50">
             {SCENES.map((s, i) => (
               <button key={s.id} role="menuitem" onClick={() => { setScene(i); setOpen(false); }}
-                className={`w-full text-left flex items-center gap-3 px-3 py-1.5 rounded-xl text-[13px] ${i === scene ? "bg-lagoon-soft text-lagoon" : "text-ink-2 hover:bg-surface-2"}`}>
-                <span className="font-mono text-[11px] text-ink-3 w-5">{s.id}</span>{s.title}
+                className={`w-full text-left flex items-center gap-3 px-3 py-1.5 rounded-xl text-[14px] ${i === scene ? "bg-lagoon-soft text-lagoon" : "text-ink-2 hover:bg-surface-2"}`}>
+                <span className="font-mono text-[13px] text-ink-3 w-5">{s.id}</span>{s.title}
               </button>
             ))}
           </motion.div>
@@ -129,7 +137,7 @@ export function Rail() {
   return (
     <div className="absolute left-0 top-14 bottom-7 w-16 flex flex-col items-center justify-center gap-3 z-30">
       {SCENES.map((s, i) => (
-        <button key={s.id} aria-label={`Scene ${s.id}, ${s.title}`} aria-current={i === scene ? "step" : undefined} onClick={() => setScene(i)} className="relative w-8 h-8 rounded-full text-[11px] font-mono flex items-center justify-center"
+        <button key={s.id} aria-label={`Scene ${s.id}, ${s.title}`} aria-current={i === scene ? "step" : undefined} onClick={() => setScene(i)} className="relative w-8 h-8 rounded-full text-[13px] font-mono flex items-center justify-center"
           style={{ background: i === scene ? "var(--lagoon)" : "var(--surface)", color: i === scene ? "#fff" : "var(--ink-3)", border: "1px solid var(--line)" }}>
           {s.id}
         </button>
@@ -139,11 +147,11 @@ export function Rail() {
 }
 
 const KEYS: Record<string, [string, string][]> = {
-  all: [["→ / ←", "next / previous scene"], ["R", "reset demo state"], ["P", "presenter overlay"]],
+  all: [["→ / ←", "next / previous scene"], ["Ctrl K or /", "find any hotel"], ["I", "method & research for this scene"], ["R", "reset demo state"], ["P", "presenter overlay"]],
   "00": [["Space", "fold rows"]],
   "01": [["1", "start left timer"], ["2", "start right timer"], ["0", "clear"]],
-  "02": [["O", "onboard NovaBeds"]],
-  "03": [["H / M / A", "Hotel · Rooms · Activities"], ["N", "near-miss"]],
+  "02": [["O", "onboard NovaBeds"], ["scroll / drag", "zoom and pan the graph"], ["click a hotel", "open it in the Inspector"]],
+  "03": [["H / M / A / Q", "Hotel · Rooms · Activities · Review queue"], ["N", "near-miss"], ["S / D / K / U", "review: same · different · skip · undo"]],
   "04": [["1-5", "presets"], ["Enter", "run trace"]],
   "05": [["↑ / ↓", "turn the dial"]],
   "06": [["Shift+1..5", "sabotage supplier"], ["Shift+0", "heal all"]],
@@ -161,9 +169,9 @@ export function PresenterOverlay() {
       {on && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={T}
           className="absolute right-16 top-20 z-50 w-[380px] rounded-card bg-ink/90 text-paper p-5 shadow-card">
-          <div className="text-[12px] uppercase tracking-[0.08em] opacity-60 mb-3">Presenter · scene {id}</div>
+          <div className="text-[13px] uppercase tracking-[0.08em] opacity-60 mb-3">Presenter · scene {id}</div>
           {[...(KEYS[id] ?? []), ...KEYS.all].map(([k, d]) => (
-            <div key={k + d} className="flex items-center justify-between py-1 text-[14px]">
+            <div key={k + d} className="flex items-center justify-between py-1 text-[15px]">
               <span className="opacity-80">{d}</span><Kbd>{k}</Kbd>
             </div>
           ))}

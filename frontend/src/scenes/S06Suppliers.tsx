@@ -56,12 +56,12 @@ export default function Suppliers() {
             <Card key={code} className="p-4 group" style={{ borderColor: bad ? "var(--clay)" : undefined }}>
               <div className="flex items-center justify-between">
                 <SupplierChip code={code} />
-                {bad ? <Chip variant="clay">sabotaged</Chip> : <span className="text-[12px] text-ink-3">{s.n_obs} obs.</span>}
+                {bad ? <Chip variant="clay">sabotaged</Chip> : <span className="text-[13px] text-ink-3">{s.n_obs} obs.</span>}
               </div>
               <div className="mt-3 flex items-end justify-between">
                 <div>
                   <Caption>Reliability</Caption>
-                  <div className="font-mono text-[44px] leading-none" style={{ color: bad ? "var(--clay-ink)" : "var(--ink)" }}>{(s.score * 100).toFixed(1)}</div>
+                  <div className="font-sans font-semibold tabular text-[44px] leading-none" style={{ color: bad ? "var(--clay-ink)" : "var(--ink)" }}>{(s.score * 100).toFixed(1)}</div>
                 </div>
                 <Sparkline data={s.spark} color={SUPPLIERS[code].color} width={120} height={40} />
               </div>
@@ -71,8 +71,8 @@ export default function Suppliers() {
                   transition={T} style={{ background: `${SUPPLIERS[code].color}55` }} />
                 <motion.div className="absolute -top-1 w-1 h-4 rounded" animate={{ left: `${Math.max(0, (s.score - 0.5) / 0.5) * 100}%` }} transition={T} style={{ background: SUPPLIERS[code].color }} />
               </div>
-              <div className="text-[11px] text-ink-3 mt-1 font-mono">90% CI {(s.ci[0] * 100).toFixed(1)}–{(s.ci[1] * 100).toFixed(1)}</div>
-              <div className="mt-2 grid grid-cols-3 text-[12px]">
+              <div className="text-[13px] text-ink-3 mt-1 font-mono">90% CI {(s.ci[0] * 100).toFixed(1)}–{(s.ci[1] * 100).toFixed(1)}</div>
+              <div className="mt-2 grid grid-cols-3 text-[13px]">
                 <div><div className="text-ink-3">confirm</div><div className="font-mono">{(s.confirm * 100).toFixed(1)}%</div></div>
                 <div><div className="text-ink-3">price jump</div><div className="font-mono">{(s.price_jump * 100).toFixed(1)}%</div></div>
                 <div><div className="text-ink-3">p50</div><div className="font-mono">{s.p50_latency.toFixed(1)} s</div></div>
@@ -89,7 +89,7 @@ export default function Suppliers() {
             <AnimatePresence initial={false}>
               {events.map((e) => (
                 <motion.div key={e.id} layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={T}
-                  className="flex items-center gap-3 py-1.5 border-b border-line/60 text-[13px]">
+                  className="flex items-center gap-3 py-1.5 border-b border-line/60 text-[14px]">
                   <span className="w-[180px] truncate">{e.hotel}</span>
                   <SupplierChip code={e.supplier} short />
                   {e.status === "confirmed" ? <span className="text-[color:var(--sage-ink)]">✓ confirmed {e.latency.toFixed(1)} s</span>
@@ -107,8 +107,8 @@ export default function Suppliers() {
               <Card key={c.tessera_id} className="p-4 flex gap-4">
                 <Photo src={c.hero} name={c.hotel} className="w-[96px] h-[96px] rounded-xl flex-none" />
                 <div className="min-w-0 flex-1">
-                  <div className="text-[16px] font-medium truncate">{c.hotel}</div>
-                  <div className="text-[13px] text-ink-3 truncate">{c.room} · {c.board === "BB" ? "Breakfast" : c.board} · {c.refundable ? "free cancel" : "NRF"}</div>
+                  <div className="text-[17px] font-medium truncate">{c.hotel}</div>
+                  <div className="text-[14px] text-ink-3 truncate">{c.room} · {c.board === "BB" ? "Breakfast" : c.board} · {c.refundable ? "free cancel" : "NRF"}</div>
                   <div className="mt-2 flex items-center gap-2">
                     <Caption>selected</Caption>
                     <AnimatePresence mode="popLayout">
@@ -116,9 +116,9 @@ export default function Suppliers() {
                         <SupplierChip code={c.supplier} />
                       </motion.span>
                     </AnimatePresence>
-                    <span className="font-mono text-[14px] ml-auto">{formatINR(c.price)}</span>
+                    <span className="font-mono text-[15px] ml-auto">{formatINR(c.price)}</span>
                   </div>
-                  <div className="text-[12px] text-ink-2 mt-1 truncate">{c.why}</div>
+                  <div className="text-[13px] text-ink-2 mt-1 truncate">{c.why}</div>
                 </div>
               </Card>
             ))}

@@ -2,32 +2,34 @@
 @tailwind components;
 @tailwind utilities;
 
-/* "Paper & Lagoon" tokens. ink-3 and the *-ink text shades are darkened slightly from the spec so
-   every caption and chip label meets WCAG AA on --paper and --surface. */
+/* TBO-aligned tokens (travelboutiqueonline.com): primary blue #014C8E, accent orange #F2A602, white surfaces,
+   cool light greys, dark text, muted blue-grey captions. Token names are kept from the original design system so
+   every component re-themes from here. All text shades meet WCAG AA on --paper and --surface. */
 :root {
-  --paper: #F7F4EE;
-  --surface: #FFFFFF;
-  --surface-2: #F1EDE5;
-  --line: #E5DFD3;
-  --ink: #15171C;
-  --ink-2: #4A505B;
-  --ink-3: #6B707A;
-  --lagoon: #0E5E6F;
-  --lagoon-soft: #DDEDEF;
-  --saffron: #E09A2C;
-  --saffron-soft: #FBEFD9;
-  --saffron-ink: #8A560B;
-  --sage: #2F8F5B;
-  --sage-soft: #E1F1E7;
-  --sage-ink: #1E6A41;
-  --clay: #C4553D;
-  --clay-soft: #F7E3DE;
-  --clay-ink: #993A25;
-  --amber: #C99A1A;
-  --amber-soft: #F7EDCC;
-  --amber-ink: #765808;
-  --iris: #5B4FC9;
-  --iris-soft: #E9E6FA;
+  --paper: #F3F5F8;        /* app background: cool light grey */
+  --surface: #FFFFFF;      /* cards */
+  --surface-2: #EEF1F5;    /* wells, table stripes */
+  --line: #D9DFE7;         /* hairlines */
+  --ink: #1B2533;          /* primary text */
+  --ink-2: #3F4B5E;        /* secondary text */
+  --ink-3: #5C6B82;        /* captions (TBO blue-grey, darkened for AA) */
+  --lagoon: #014C8E;       /* PRIMARY: TBO blue. Our system, links, focus */
+  --lagoon-soft: #E2EDF8;
+  --navy: #013A6D;         /* top bar */
+  --saffron: #F2A602;      /* ACCENT: TBO orange. Money, best offer, primary call to action */
+  --saffron-soft: #FEF2D6;
+  --saffron-ink: #8A5800;
+  --sage: #1E8E4E;         /* success, auto-merged, guarantee held */
+  --sage-soft: #E2F4E9;
+  --sage-ink: #146B3A;
+  --clay: #D0392B;         /* errors, failures, sabotage */
+  --clay-soft: #FBE5E2;
+  --clay-ink: #A32A1F;
+  --amber: #C99700;        /* needs human review (yellow, kept distinct from the orange accent) */
+  --amber-soft: #FFF6CC;
+  --amber-ink: #6E5300;
+  --iris: #6B3FD4;         /* anything the LLM touched */
+  --iris-soft: #EEE8FC;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -36,11 +38,15 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: "Geist Variable", system-ui, sans-serif;
+  font-family: "Inter Variable", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
-.tabular { font-variant-numeric: tabular-nums; }
+.tabular { font-variant-numeric: tabular-nums lining-nums; }
+.font-serif { font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: lining-nums; }
 .font-mono { font-variant-numeric: tabular-nums; }
 
 /* subtle paper grain */

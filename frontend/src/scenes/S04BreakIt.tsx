@@ -69,26 +69,26 @@ export default function BreakIt() {
           <Caption>Paste or type any supplier listing</Caption>
           <div className="mt-3 flex flex-wrap gap-2">
             {presets ? presets.map((p, i) => (
-              <button key={p.id} onClick={() => choose(p)} className={cx("rounded-full px-3 py-1 text-[13px] border transition",
+              <button key={p.id} onClick={() => choose(p)} className={cx("rounded-full px-3 py-1 text-[14px] border transition",
                 active === p.id ? "bg-ink text-paper border-ink" : "border-line text-ink-2 hover:bg-surface-2")}>
-                <span className="font-mono text-[11px] opacity-60 mr-1">{i + 1}</span>{p.label}
+                <span className="font-mono text-[13px] opacity-60 mr-1">{i + 1}</span>{p.label}
               </button>
             )) : <Skeleton className="h-7 w-full" />}
           </div>
           <div className="mt-5 space-y-3">
             {FIELDS.map(([k, label, ph]) => (
               <label key={k} className="block">
-                <span className="text-[12px] text-ink-3">{label}</span>
+                <span className="text-[13px] text-ink-3">{label}</span>
                 <input value={rec[k] ?? ""} placeholder={ph} onChange={(e) => { setRec({ ...rec, [k]: e.target.value }); setActive(null); }}
                   onKeyDown={(e) => e.key === "Enter" && run()}
-                  className="mt-1 w-full rounded-xl border border-line bg-paper px-3 py-2 text-[15px] font-mono outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon-soft" />
+                  className="mt-1 w-full rounded-xl border border-line bg-paper px-3 py-2 text-[16px] font-mono outline-none focus:border-lagoon focus:ring-2 focus:ring-lagoon-soft" />
               </label>
             ))}
           </div>
-          {error && <p role="alert" className="mt-3 text-[14px] text-[color:var(--clay-ink)]">{error}</p>}
+          {error && <p role="alert" className="mt-3 text-[15px] text-[color:var(--clay-ink)]">{error}</p>}
           <div className="mt-auto pt-5 flex items-center justify-between">
             <Button onClick={() => run()} disabled={busy || !rec.name} kbd="Enter">Run the pipeline</Button>
-            {trace && <span className="text-[13px] text-ink-3 font-mono">total {ms(trace.timings.total_ms)}</span>}
+            {trace && <span className="text-[14px] text-ink-3 font-mono">total {ms(trace.timings.total_ms)}</span>}
           </div>
         </Card>
         <div className="flex flex-col gap-3 min-h-0">
@@ -110,9 +110,9 @@ export default function BreakIt() {
               <TraceStep n={2} show={step >= 2} title={`Candidates · ${trace.candidates.length} hotels (from ${trace.n_candidates_raw} records)`} time={trace.timings.candidates_ms}>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-1">
                   {trace.candidates.slice(0, 8).map((c: any) => (
-                    <div key={c.tessera_id} className="flex items-center gap-2 text-[13px] min-w-0">
+                    <div key={c.tessera_id} className="flex items-center gap-2 text-[14px] min-w-0">
                       <span className="truncate flex-1">{c.name}</span>
-                      {c.sources.map((s: string) => <span key={s} className="font-mono text-[10px] px-1.5 rounded bg-surface-2 text-ink-3">{s}</span>)}
+                      {c.sources.map((s: string) => <span key={s} className="font-mono text-[12px] px-1.5 rounded bg-surface-2 text-ink-3">{s}</span>)}
                     </div>
                   ))}
                 </div>
@@ -121,12 +121,12 @@ export default function BreakIt() {
                 <div className="space-y-2">
                   {trace.candidates.slice(0, 4).map((c: any) => (
                     <div key={c.tessera_id} className="flex items-center gap-4">
-                      <span className="w-[260px] truncate text-[13px]">{c.name}{c.dist_m !== null && <span className="text-ink-3"> · {c.dist_m} m</span>}</span>
+                      <span className="w-[260px] truncate text-[14px]">{c.name}{c.dist_m !== null && <span className="text-ink-3"> · {c.dist_m} m</span>}</span>
                       <ProbBar p={c.p} tauAccept={trace.tau_accept} tauReject={trace.tau_reject} width={420} label={false} />
-                      <span className="font-mono text-[13px] w-16">{c.p.toFixed(3)}</span>
+                      <span className="font-mono text-[14px] w-16">{c.p.toFixed(3)}</span>
                     </div>
                   ))}
-                  <div className="text-[11px] text-ink-3 font-mono">{trace.tau_reject == null ? "auto-reject disabled" : `grey ≤ ${trace.tau_reject.toFixed(2)} auto-reject`} · amber review · {trace.tau_accept == null ? "auto-merge disabled" : `green ≥ ${trace.tau_accept.toFixed(2)} auto-merge`} (α = {(trace.alpha * 100).toFixed(1)}%)</div>
+                  <div className="text-[13px] text-ink-3 font-mono">{trace.tau_reject == null ? "auto-reject disabled" : `grey ≤ ${trace.tau_reject.toFixed(2)} auto-reject`} · amber review · {trace.tau_accept == null ? "auto-merge disabled" : `green ≥ ${trace.tau_accept.toFixed(2)} auto-merge`} (α = {(trace.alpha * 100).toFixed(1)}%)</div>
                 </div>
               </TraceStep>
               <AnimatePresence>
@@ -146,8 +146,8 @@ function TraceStep({ n, show, title, time, children }: any) {
       {show && (
         <Card initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T} className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-lagoon-soft text-lagoon text-[12px] font-mono flex items-center justify-center">{n}</span><span className="text-[15px] font-medium">{title}</span></div>
-            <span className="font-mono text-[12px] text-ink-3">{ms(time)}</span>
+            <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-full bg-lagoon-soft text-lagoon text-[13px] font-mono flex items-center justify-center">{n}</span><span className="text-[16px] font-medium">{title}</span></div>
+            <span className="font-mono text-[13px] text-ink-3">{ms(time)}</span>
           </div>
           {children}
         </Card>
@@ -163,15 +163,15 @@ function Decision({ t }: { t: any }) {
   return (
     <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={T} className={cx("rounded-card border-2 p-5", tone[0])}>
       <div className="flex items-center gap-3">
-        <span className="w-6 h-6 rounded-full bg-white/70 text-[12px] font-mono flex items-center justify-center">4</span>
+        <span className="w-6 h-6 rounded-full bg-white/70 text-[13px] font-mono flex items-center justify-center">4</span>
         <span className={cx("text-[22px] font-semibold tracking-wide", tone[1])}>{tone[2]}</span>
         {d.name && <span className="text-[18px] text-ink">→ {d.name}</span>}
       </div>
       <div className="mt-2 text-[17px] text-ink">{d.reason}</div>
-      {d.route === "llm" && d.llm_json && <pre className="mt-2 font-mono text-[12px] text-iris bg-white/60 rounded-lg p-2">{JSON.stringify(d.llm_json)}</pre>}
-      {d.route === "review" && d.llm_offline && <div className="mt-1 text-[13px] text-ink-3">LLM offline: routing to review.</div>}
+      {d.route === "llm" && d.llm_json && <pre className="mt-2 font-mono text-[13px] text-iris bg-white/60 rounded-lg p-2">{JSON.stringify(d.llm_json)}</pre>}
+      {d.route === "review" && d.llm_offline && <div className="mt-1 text-[14px] text-ink-3">LLM offline: routing to review.</div>}
       {t.room_match && (
-        <div className="mt-3 flex items-center gap-2 text-[14px]">
+        <div className="mt-3 flex items-center gap-2 text-[15px]">
           <Caption>Room</Caption><span>{t.room_match.name}</span><Chip variant={t.room_match.tier === "Primary" ? "lagoon" : "amber"}>{t.room_match.tier} match</Chip>
           {t.room_match.suppliers.map((s: string) => <SupplierChip key={s} code={s} short />)}
         </div>

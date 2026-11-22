@@ -56,17 +56,17 @@ USD_TO_INR = float(os.getenv("USD_TO_INR", "84.0"))
 
 # ---------------------------------------------------------------- Suppliers
 SUPPLIERS = {
-    "S1": {"name": "DirectConnect", "persona": "TBO direct contracts", "color": "#0E5E6F",
+    "S1": {"name": "DirectConnect", "persona": "TBO direct contracts", "color": "#014C8E",
            "take_rate": 0.12, "profile": {"confirm": 0.993, "price_jump": 0.005, "latency": 1.2}},
     "S2": {"name": "GlobalBeds", "persona": "Big bed bank", "color": "#8A6D3B",
            "take_rate": 0.09, "profile": {"confirm": 0.975, "price_jump": 0.04, "latency": 2.8}},
-    "S3": {"name": "IberiaBeds", "persona": "Spanish wholesaler", "color": "#9C4F6B",
+    "S3": {"name": "IberiaBeds", "persona": "Spanish wholesaler", "color": "#A23B72",
            "take_rate": 0.095, "profile": {"confirm": 0.986, "price_jump": 0.015, "latency": 1.9}},
-    "S4": {"name": "LuxeCollection", "persona": "Luxury specialist", "color": "#3F5F8F",
+    "S4": {"name": "LuxeCollection", "persona": "Luxury specialist", "color": "#2F7F86",
            "take_rate": 0.10, "profile": {"confirm": 0.990, "price_jump": 0.01, "latency": 1.5}},
-    "S5": {"name": "RapidStay", "persona": "Aggregator of aggregators", "color": "#6E7B4E",
+    "S5": {"name": "RapidStay", "persona": "Aggregator of aggregators", "color": "#6B7A2E",
            "take_rate": 0.08, "profile": {"confirm": 0.958, "price_jump": 0.06, "latency": 3.9}},
-    "S6": {"name": "NovaBeds", "persona": "New supplier (live onboarding)", "color": "#B4683A",
+    "S6": {"name": "NovaBeds", "persona": "New supplier (live onboarding)", "color": "#E8590C",
            "take_rate": 0.09, "profile": {"confirm": 0.980, "price_jump": 0.025, "latency": 2.2}},
 }
 ACTIVE_SUPPLIERS = ["S1", "S2", "S3", "S4", "S5"]

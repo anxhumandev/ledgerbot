@@ -50,7 +50,7 @@ export default function DialScene() {
       <div className="grid grid-cols-[minmax(0,1fr)_400px_520px] gap-8 flex-1 min-h-0 items-center">
         <Card className="p-6 h-[600px] flex flex-col">
           <Caption>Automation vs guaranteed risk · held-out test</Caption>
-          <div className="flex gap-5 mt-2 text-[13px]">
+          <div className="flex gap-5 mt-2 text-[14px]">
             <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-lagoon" />auto-decided</span>
             <span className="flex items-center gap-2"><span className="w-4 h-2.5 bg-amber-soft border border-amber" />review volume (right axis)</span>
           </div>
@@ -68,13 +68,13 @@ export default function DialScene() {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-[12px] text-ink-3">x: guaranteed max false-merge rate α (log scale)</div>
+          <div className="text-[13px] text-ink-3">x: guaranteed max false-merge rate α (log scale)</div>
         </Card>
         <div className="flex flex-col items-center">
           <Dial value={alpha} min={0.001} max={0.05} onChange={onChange} onCommit={onCommit} size={260}
             format={(v) => `${(v * 100).toFixed(v < 0.01 ? 2 : 1)}%`} />
           {!row.certifiable && (
-            <div className="mt-4 text-center text-[14px] text-[color:var(--amber-ink)] max-w-[340px]">
+            <div className="mt-4 text-center text-[15px] text-[color:var(--amber-ink)] max-w-[340px]">
               Not certifiable with {groupIN(row.cal_units_total)} audited property pairs: needs ≥ {groupIN(row.n_min)} clean auto-merges. LedgerBot refuses to auto-merge rather than pretend.
             </div>
           )}

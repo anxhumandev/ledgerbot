@@ -36,12 +36,12 @@ export function ms(x: number | null | undefined): string {
 }
 
 export const SUPPLIERS: Record<string, { name: string; color: string }> = {
-  S1: { name: "DirectConnect", color: "#0E5E6F" },
+  S1: { name: "DirectConnect", color: "#014C8E" },
   S2: { name: "GlobalBeds", color: "#8A6D3B" },
-  S3: { name: "IberiaBeds", color: "#9C4F6B" },
-  S4: { name: "LuxeCollection", color: "#3F5F8F" },
-  S5: { name: "RapidStay", color: "#6E7B4E" },
-  S6: { name: "NovaBeds", color: "#B4683A" },
+  S3: { name: "IberiaBeds", color: "#A23B72" },
+  S4: { name: "LuxeCollection", color: "#2F7F86" },
+  S5: { name: "RapidStay", color: "#6B7A2E" },
+  S6: { name: "NovaBeds", color: "#E8590C" },
 };
 
 export const BOARD: Record<string, string> = { RO: "Room only", BB: "Breakfast", HB: "Half board", FB: "Full board", AI: "All inclusive" };

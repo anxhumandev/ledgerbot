@@ -101,11 +101,11 @@ export function Dial({ value, min, max, onChange, onCommit, size = 260, format }
           <div className="absolute left-1/2 -translate-x-1/2 top-3 w-1.5 h-7 rounded-full bg-lagoon" />
         </motion.div>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="font-mono text-[34px] text-ink leading-none">{format(value)}</div>
-          <div className="mt-1 text-[11px] uppercase tracking-[0.08em] text-ink-3">max false merges</div>
+          <div className="font-sans font-semibold tabular text-[34px] text-ink leading-none">{format(value)}</div>
+          <div className="mt-1 text-[13px] uppercase tracking-[0.08em] text-ink-3">max false merges</div>
         </div>
       </div>
-      <div className="mt-2 text-[12px] text-ink-3">drag · ↑/↓ {midi ? "· MIDI knob connected" : ""}</div>
+      <div className="mt-2 text-[13px] text-ink-3">drag · ↑/↓ {midi ? "· MIDI knob connected" : ""}</div>
     </div>
   );
 }

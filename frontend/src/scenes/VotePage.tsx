@@ -95,7 +95,7 @@ export default function VotePage() {
     return (
       <div className="min-h-full bg-paper px-5 py-10">
         <div className="font-serif text-[40px] leading-tight">Judges vs Machine</div>
-        <p className="text-ink-2 mt-2 text-[16px]">Pick a nickname for the leaderboard.</p>
+        <p className="text-ink-2 mt-2 text-[17px]">Pick a nickname for the leaderboard.</p>
         <input value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={24} placeholder="Nickname"
           className="mt-6 w-full rounded-2xl border border-line bg-surface px-4 py-4 text-[20px] outline-none focus:border-lagoon" />
         <button disabled={!draft.trim()} onClick={() => { try { localStorage.setItem(NICK_KEY, draft.trim()); } catch { /* private mode */ } setNick(draft.trim()); }}
@@ -107,14 +107,14 @@ export default function VotePage() {
     <div className="min-h-full bg-paper px-4 py-5 overflow-y-auto" style={{ height: "100%" }}>
       <div className="flex items-center justify-between">
         <div className="font-serif text-[26px]">LedgerBot</div>
-        <div className="text-[14px] text-ink-3">{nick}</div>
+        <div className="text-[15px] text-ink-3">{nick}</div>
       </div>
       {message && <p role="status" className="mt-4 text-sm text-ink-2">{message}</p>}
       {!pair ? (
         <div className="mt-24 text-center text-[22px] text-ink-2">Look at the screen 👀</div>
       ) : (
         <div className="mt-4">
-          <div className="flex items-center justify-between text-[14px] text-ink-3">
+          <div className="flex items-center justify-between text-[15px] text-ink-3">
             <span>Pair {pair.idx + 1} / {pair.total} · {pair.kind === "room" ? "two rate offers" : "two hotel listings"}</span>
             {!reveal && (
               <svg width="40" height="40" viewBox="0 0 40 40">
@@ -130,11 +130,11 @@ export default function VotePage() {
             const diff = (f: string) => (x[f] ?? "") !== (other[f] ?? "");
             return (
               <div key={k} className="mt-3 rounded-2xl bg-surface border border-line p-4">
-                <span className="text-[12px] font-medium rounded-full px-2 py-0.5" style={{ background: `${SUPPLIERS[x.supplier]?.color}18`, color: SUPPLIERS[x.supplier]?.color }}>{SUPPLIERS[x.supplier]?.name}</span>
+                <span className="text-[13px] font-medium rounded-full px-2 py-0.5" style={{ background: `${SUPPLIERS[x.supplier]?.color}18`, color: SUPPLIERS[x.supplier]?.color }}>{SUPPLIERS[x.supplier]?.name}</span>
                 <div className={`text-[18px] mt-2 font-medium ${diff("name") ? "bg-saffron-soft rounded px-1 -mx-1" : ""}`}>{x.name}</div>
-                <div className={`text-[14px] text-ink-2 mt-1 ${diff("address") ? "bg-saffron-soft rounded px-1 -mx-1" : ""}`}>{x.address ?? "—"}</div>
-                <div className={`text-[14px] text-ink-2 font-mono ${diff("phone") ? "bg-saffron-soft rounded px-1 -mx-1" : ""}`}>{x.phone ?? "—"}</div>
-                <div className="text-[13px] text-ink-3 font-mono">{x.coords}{x.stars ? ` · ${x.stars}★` : ""}</div>
+                <div className={`text-[15px] text-ink-2 mt-1 ${diff("address") ? "bg-saffron-soft rounded px-1 -mx-1" : ""}`}>{x.address ?? "—"}</div>
+                <div className={`text-[15px] text-ink-2 font-mono ${diff("phone") ? "bg-saffron-soft rounded px-1 -mx-1" : ""}`}>{x.phone ?? "—"}</div>
+                <div className="text-[14px] text-ink-3 font-mono">{x.coords}{x.stars ? ` · ${x.stars}★` : ""}</div>
               </div>
             );
           })}
@@ -147,20 +147,20 @@ export default function VotePage() {
                     {a.label}
                   </button>
                 ))}
-                {mine && <div className="text-center text-[16px] text-[color:var(--sage-ink)]">Locked in ✓</div>}
+                {mine && <div className="text-center text-[17px] text-[color:var(--sage-ink)]">Locked in ✓</div>}
               </motion.div>
             ) : (
               <motion.div key="rev" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T}
                 className={`mt-4 rounded-2xl p-5 ${mine === reveal.truth ? "bg-sage-soft" : "bg-clay-soft"}`}>
                 <div className="text-[22px] font-medium">{mine === reveal.truth ? "Correct ✓" : mine ? "Not quite" : "No vote"}</div>
-                <div className="text-[16px] mt-1">Answer: {LABEL[reveal.truth]}</div>
-                <div className="text-[16px] text-lagoon mt-1">LedgerBot: {LABEL[reveal.tessera.answer]}</div>
+                <div className="text-[17px] mt-1">Answer: {LABEL[reveal.truth]}</div>
+                <div className="text-[17px] text-lagoon mt-1">LedgerBot: {LABEL[reveal.tessera.answer]}</div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       )}
-      <div className="mt-8 text-[11px] text-ink-3">Synthetic demo data · prices and policies are fictional</div>
+      <div className="mt-8 text-[13px] text-ink-3">Synthetic demo data · prices and policies are fictional</div>
     </div>
   );
 }

@@ -56,8 +56,8 @@ function Board() {
     <div className="grid grid-cols-[minmax(0,1fr)_520px] gap-6 h-full">
       <div className="flex flex-col gap-4 min-h-0">
         <Card {...rise(0)} className="overflow-hidden shrink-0">
-          <div className="grid grid-cols-[1.3fr_1fr_1fr] px-6 h-12 items-center bg-surface-2 text-[13px] font-medium">
-            <span className="text-ink-3 uppercase tracking-[0.08em] text-[12px]">Metric · {data.n_hotel} hotel pairs · {data.n_room} room pairs</span>
+          <div className="grid grid-cols-[1.3fr_1fr_1fr] px-6 h-12 items-center bg-surface-2 text-[14px] font-medium">
+            <span className="text-ink-3 uppercase tracking-[0.08em] text-[13px]">Metric · {data.n_hotel} hotel pairs · {data.n_room} room pairs</span>
             <span className="text-iris flex items-center gap-2">
               {sim ? <>LLM-only (pairwise) <Chip variant="iris">SIMULATED</Chip></> : <>LLM-only ({data.baseline_model}, pairwise)</>}
             </span>
@@ -65,40 +65,40 @@ function Board() {
           </div>
           {rows.map(([m, l, r, note], i) => (
             <motion.div key={m} {...rise(i + 1)} className="grid grid-cols-[1.3fr_1fr_1fr] px-6 py-3 items-center border-t border-line">
-              <span className="text-[16px]">{m}</span>
-              <span className="font-mono text-[20px] text-iris">{l}</span>
-              <span><span className="font-mono text-[20px] text-lagoon">{r}</span>{note && <div className="text-[12px] text-ink-3">{note}</div>}</span>
+              <span className="text-[17px]">{m}</span>
+              <span className="font-sans font-semibold tabular text-[20px] text-iris">{l}</span>
+              <span><span className="font-sans font-semibold tabular text-[20px] text-lagoon">{r}</span>{note && <div className="text-[13px] text-ink-3">{note}</div>}</span>
             </motion.div>
           ))}
         </Card>
         {!b && (
           <Card className="p-4 border-iris bg-iris-soft/60">
-            <div className="text-[16px] text-iris font-medium">Baseline not yet run: <code className="font-mono">make baseline</code></div>
-            <div className="text-[13px] text-ink-2 mt-1">The LLM-only column is never estimated or faked. Add ANTHROPIC_API_KEY to .env and run it once ({data.n_hotel} + {data.n_room} calls to {data.baseline_model}); results are cached with a timestamp.</div>
+            <div className="text-[17px] text-iris font-medium">Baseline not yet run: <code className="font-mono">make baseline</code></div>
+            <div className="text-[14px] text-ink-2 mt-1">The LLM-only column is never estimated or faked. Add ANTHROPIC_API_KEY to .env and run it once ({data.n_hotel} + {data.n_room} calls to {data.baseline_model}); results are cached with a timestamp.</div>
           </Card>
         )}
         {b && sim && (
-          <div className="text-[13px] text-ink-2 shrink-0 leading-snug">
+          <div className="text-[14px] text-ink-2 shrink-0 leading-snug">
             <span className="text-iris font-medium">LLM-only column is a simulated profile, not a live run:</span> stated error rates for a zero-shot pairwise LLM
             ({pct(b.profile?.hotel_hard_negative_false_merge ?? 0, 0)} of sister hotels merged, {pct(b.profile?.room_diff_terms_false_merge ?? 0, 0)} of breakfast-vs-room-only
             offers merged) on the hardest-looking pairs; F1, violations and calibration computed from those answers; cost and latency estimated.
           </div>
         )}
-        {b && !sim && <div className="text-[13px] text-ink-3">Baseline run on {b.run_at}, model {b.model}. <Cite>Entity matching with LLMs (Peeters, Steiner &amp; Bizer, EDBT 2025)</Cite></div>}
+        {b && !sim && <div className="text-[14px] text-ink-3">Baseline run on {b.run_at}, model {b.model}. <Cite>Entity matching with LLMs (Peeters, Steiner &amp; Bizer, EDBT 2025)</Cite></div>}
         {corner && (
           <Card className="p-5">
             <Caption>Corner case · where the {sim ? "simulated " : ""}LLM-only pipeline was wrong</Caption>
             <AnimatePresence mode="wait">
               <motion.div key={ci} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={T} className="mt-2">
-                <div className="grid grid-cols-2 gap-4 text-[14px]">
+                <div className="grid grid-cols-2 gap-4 text-[15px]">
                   {[corner.a, corner.b].map((x: any, k: number) => (
                     <div key={k} className="rounded-xl bg-surface-2 p-3">
                       <SupplierChip code={x.supplier} short /> <span className="ml-1">{x.name ?? x.room_name}</span>
-                      {x.board_raw && <div className="font-mono text-[12px] text-ink-3 mt-1">{x.board_raw} · {x.cancellation_raw}</div>}
+                      {x.board_raw && <div className="font-mono text-[13px] text-ink-3 mt-1">{x.board_raw} · {x.cancellation_raw}</div>}
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 flex gap-3 text-[14px]">
+                <div className="mt-3 flex gap-3 text-[15px]">
                   <Chip variant="neutral">truth: {corner.truth.replaceAll("_", " ")}</Chip>
                   <Chip variant="iris">LLM: {corner.llm.same ? "same" : "different"} ({corner.llm.confidence}% sure)</Chip>
                   <Chip variant="lagoon">LedgerBot: {corner.tessera.answer}{corner.tessera.p != null ? ` (p = ${corner.tessera.p.toFixed(2)})` : ""}</Chip>
@@ -110,7 +110,7 @@ function Board() {
       </div>
       <Card {...rise(2)} className="p-5 flex flex-col">
         <Caption>Reliability diagram · stated confidence vs actual accuracy</Caption>
-        <div className="flex gap-4 mt-2 text-[13px]">
+        <div className="flex gap-4 mt-2 text-[14px]">
           <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-lagoon" />LedgerBot (held-out)</span>
           <span className="flex items-center gap-2"><span className="w-4 h-0.5 bg-iris" />LLM-only {b ? (sim ? "(simulated)" : "") : "(not run)"}</span>
           <span className="flex items-center gap-2"><span className="w-4 h-0.5 border-t border-dashed border-ink-3" />perfect</span>
@@ -127,9 +127,9 @@ function Board() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-        <div className="text-[12px] text-ink-3 mt-2">x: confidence in the predicted answer · y: share correct. On the diagonal = says what it knows.</div>
+        <div className="text-[13px] text-ink-3 mt-2">x: confidence in the predicted answer · y: share correct. On the diagonal = says what it knows.</div>
         {t.reliability.length > 0 && (
-          <div className="text-[12px] text-ink-2 mt-1">
+          <div className="text-[13px] text-ink-2 mt-1">
             Pairs per point · <span className="text-lagoon">LedgerBot</span> {t.reliability.map((r: any) => r.n.toLocaleString("en-IN")).join(" · ")}
             {b?.reliability?.length ? <> · <span className="text-iris">LLM-only</span> {b.reliability.map((r: any) => r.n.toLocaleString("en-IN")).join(" · ")}</> : null}
           </div>
@@ -202,7 +202,7 @@ function Voting() {
       <Card className="p-6 flex flex-col items-center">
         <Caption>Scan to vote</Caption>
         {sess ? <div className="mt-4 p-3 bg-white rounded-2xl border border-line"><QRCodeSVG value={sess.url} size={260} fgColor="#15171C" /></div> : <Skeleton className="w-[280px] h-[280px] mt-4" />}
-        <div className="mt-3 font-mono text-[13px] text-ink-2 break-all text-center">{sess?.url}</div>
+        <div className="mt-3 font-mono text-[14px] text-ink-2 break-all text-center">{sess?.url}</div>
         <Button className="mt-auto" onClick={advance} disabled={!sess || !!(reveal && pair?.idx + 1 >= pair?.total)} kbd="Space">
           {!pair ? "Start voting" : !reveal ? "Reveal answer" : pair.idx + 1 < pair.total ? "Next pair" : "Voting complete"}
         </Button>
@@ -214,16 +214,16 @@ function Voting() {
           <>
             <div className="flex items-center justify-between">
               <Caption>Pair {pair.idx + 1} of {pair.total} · {pair.kind === "room" ? "two rate offers, same hotel" : "two hotel listings"}</Caption>
-              {!reveal && <span className="font-mono text-[28px]" style={{ color: left < 3 ? "var(--clay)" : "var(--ink)" }}>{left.toFixed(0)}s</span>}
+              {!reveal && <span className="font-sans font-semibold tabular text-[28px]" style={{ color: left < 3 ? "var(--clay)" : "var(--ink)" }}>{left.toFixed(0)}s</span>}
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[pair.a, pair.b].map((x: any, k: number) => (
                 <Card key={k} className="p-4">
                   <SupplierChip code={x.supplier} />
                   <div className="text-[18px] font-medium mt-2">{x.name}</div>
-                  <div className="text-[13px] text-ink-2 mt-1 font-mono">{x.address ?? "—"}</div>
-                  <div className="text-[13px] text-ink-2 font-mono">{x.phone ?? "—"}</div>
-                  <div className="text-[13px] text-ink-3 font-mono">{x.coords}{x.stars ? ` · ${x.stars}★` : ""}</div>
+                  <div className="text-[14px] text-ink-2 mt-1 font-mono">{x.address ?? "—"}</div>
+                  <div className="text-[14px] text-ink-2 font-mono">{x.phone ?? "—"}</div>
+                  <div className="text-[14px] text-ink-3 font-mono">{x.coords}{x.stars ? ` · ${x.stars}★` : ""}</div>
                 </Card>
               ))}
             </div>
@@ -235,7 +235,7 @@ function Voting() {
                   const isTruth = reveal?.truth === o;
                   return (
                     <div key={o} className="flex items-center gap-3">
-                      <span className={cx("w-[230px] text-[15px]", isTruth && "font-semibold text-[color:var(--sage-ink)]")}>{ANSWER_LABEL[o]}{isTruth && " ✓"}</span>
+                      <span className={cx("w-[230px] text-[16px]", isTruth && "font-semibold text-[color:var(--sage-ink)]")}>{ANSWER_LABEL[o]}{isTruth && " ✓"}</span>
                       <div className="flex-1 h-6 rounded-full bg-surface-2 overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-300" style={{ width: `${n ? (v / n) * 100 : 0}%`, background: isTruth ? "var(--sage)" : "var(--lagoon)" }} />
                       </div>
@@ -248,9 +248,9 @@ function Voting() {
             <AnimatePresence>
               {reveal && (
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T} className="grid grid-cols-3 gap-3">
-                  <Card className="p-4"><Caption>Truth</Caption><div className="text-[18px] mt-1 font-medium">{ANSWER_LABEL[reveal.truth]}</div><div className="text-[12px] text-ink-3 mt-1">humans avg {reveal.human_avg_ms ? ms(reveal.human_avg_ms) : "—"}</div></Card>
+                  <Card className="p-4"><Caption>Truth</Caption><div className="text-[18px] mt-1 font-medium">{ANSWER_LABEL[reveal.truth]}</div><div className="text-[13px] text-ink-3 mt-1">humans avg {reveal.human_avg_ms ? ms(reveal.human_avg_ms) : "—"}</div></Card>
                   <Card className="p-4 border-lagoon"><Caption>LedgerBot</Caption><div className="text-[18px] mt-1 font-medium text-lagoon">{ANSWER_LABEL[reveal.tessera.answer]}</div>
-                    <div className="text-[12px] text-ink-3 mt-1">{reveal.tessera.p != null ? `p = ${reveal.tessera.p.toFixed(3)} · ` : ""}{ms(reveal.tessera.ms)}</div></Card>
+                    <div className="text-[13px] text-ink-3 mt-1">{reveal.tessera.p != null ? `p = ${reveal.tessera.p.toFixed(3)} · ` : ""}{ms(reveal.tessera.ms)}</div></Card>
                   <Card className="p-4"><Caption>LLM-only ({reveal.baseline?.simulated ? "simulated" : "cached"})</Caption><div className="text-[18px] mt-1 font-medium text-iris">{reveal.baseline ? `${ANSWER_LABEL[reveal.baseline.answer]} (${reveal.baseline.confidence}%)` : "not run"}</div></Card>
                 </motion.div>
               )}
@@ -263,7 +263,7 @@ function Voting() {
           <Caption>Leaderboard</Caption>
           <div className="mt-2">
             {lb.slice(0, 8).map((r: any, i: number) => (
-              <motion.div layout key={r.name} transition={T} className="flex items-center justify-between py-1.5 border-b border-line/60 text-[15px]">
+              <motion.div layout key={r.name} transition={T} className="flex items-center justify-between py-1.5 border-b border-line/60 text-[16px]">
                 <span className={cx(r.kind === "tessera" && "text-lagoon font-medium", r.kind === "llm" && "text-iris font-medium")}>{i + 1}. {r.name}</span>
                 <span className="font-mono">{r.score}</span>
               </motion.div>
@@ -272,14 +272,14 @@ function Voting() {
         </Card>
         <Card className="p-5">
           <Caption>Twist</Caption>
-          <div className="text-[16px] mt-2">Pairs where you disagreed with each other → LedgerBot abstained on <span className="font-mono text-[color:var(--amber-ink)]">{twist?.tessera_abstained ?? 0}/{twist?.disagreed ?? 0}</span> of them.</div>
+          <div className="text-[17px] mt-2">Pairs where you disagreed with each other → LedgerBot abstained on <span className="font-mono text-[color:var(--amber-ink)]">{twist?.tessera_abstained ?? 0}/{twist?.disagreed ?? 0}</span> of them.</div>
           <Button className="mt-4" onClick={learn} disabled={learning || !reveal} kbd="L">{learning ? "Retraining…" : "Learn from your votes"}</Button>
           {learned?.reason && <p className="mt-3 text-sm text-ink-2">{learned.reason}</p>}
           {learned && learned.labels_added > 0 && (
-            <div className="mt-3 text-[15px]">
+            <div className="mt-3 text-[16px]">
               <span className="text-ink-2">+{learned.labels_added} labels · retrained in {learned.seconds}s</span>
-              <div className="font-mono text-[20px] mt-1">Review band: {learned.review_before} → <span className="text-lagoon">{learned.review_after}</span> pairs</div>
-              <div className="text-[12px] text-ink-3">{pct(learned.review_before_pct, 3)} → {pct(learned.review_after_pct, 3)} of candidate pairs · thresholds re-certified</div>
+              <div className="font-sans font-semibold tabular text-[20px] mt-1">Review band: {learned.review_before} → <span className="text-lagoon">{learned.review_after}</span> pairs</div>
+              <div className="text-[13px] text-ink-3">{pct(learned.review_before_pct, 3)} → {pct(learned.review_after_pct, 3)} of candidate pairs · thresholds re-certified</div>
             </div>
           )}
         </Card>

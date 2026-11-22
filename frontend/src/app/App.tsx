@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Component, lazy, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
 import { EdgeArrows, Footer, PresenterOverlay, Rail, TopBar } from "../components/Chrome";
+import { ResearchPanel, SearchPalette } from "../components/Overlays";
 import { Skeleton, Stage, T, ToastHost } from "../design/primitives";
 import { api, post } from "../lib/api";
 import { RECORD_MODE } from "../lib/format";
@@ -89,7 +90,11 @@ function StageApp() {
   }, []);
   useEffect(() => {
     const on = async (e: KeyboardEvent) => {
-      if (typing() || e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); useApp.getState().setSearch(true); return; }
+      if (e.key === "Escape") { useApp.getState().setSearch(false); if (useApp.getState().research) useApp.getState().toggleResearch(); }
+      if (typing() || e.metaKey || e.ctrlKey || e.altKey || useApp.getState().searchOpen) return;
+      if (e.key === "/") { e.preventDefault(); useApp.getState().setSearch(true); return; }
+      if (e.key === "i" || e.key === "I") { useApp.getState().toggleResearch(); return; }
       if (e.key === "ArrowRight" && !e.shiftKey) useApp.getState().next();
       else if (e.key === "ArrowLeft" && !e.shiftKey) useApp.getState().prev();
       else if (e.key === "p" || e.key === "P") useApp.getState().togglePresenter();
@@ -107,7 +112,7 @@ function StageApp() {
         {!health?.ok ? (
           <div className="h-full flex flex-col items-center justify-center gap-4 text-ink-2">
             <div className="font-serif text-[44px] text-ink">Warming up the pipeline…</div>
-            <div className="text-[16px] max-w-[760px] text-center">{health?.error ?? "Waiting for the backend at /api (make dev)."}</div>
+            <div className="text-[17px] max-w-[760px] text-center">{health?.error ?? "Waiting for the backend at /api (make dev)."}</div>
             <Skeleton className="w-[520px] h-3 mt-4" />
           </div>
         ) : (
@@ -123,6 +128,8 @@ function StageApp() {
       <EdgeArrows />
       <Footer />
       <PresenterOverlay />
+      <ResearchPanel />
+      <SearchPalette />
       <ToastHost toast={toast} />
     </Stage>
   );

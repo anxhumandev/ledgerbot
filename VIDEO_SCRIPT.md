@@ -97,7 +97,7 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 > First, LedgerBot finds candidates cheaply: by location, by name, by meaning, and by matching photos. It never compares all pairs; that cuts the work by 99.3% and still catches 100% of the true matches.
 > Then a small learned model scores each pair in milliseconds.
 > *(orange dots snap into clusters)*
-> Each orange dot that snaps into a cluster was merged automatically. Brand-new hotels get their own spot. Anything it isn't sure about pulses amber and goes to a human. In production an LLM looks at those first; in this recording the LLM is switched off, so they go straight to review.
+> Each orange dot that snaps into a cluster was merged automatically. Brand-new hotels get their own spot. Anything it isn't sure about pulses yellow and goes to a human. In production an LLM looks at those first; in this recording the LLM is switched off, so they go straight to review.
 > *(green banner)*
 > About fifty seconds. 730 records, 91 percent, merged automatically; 71 brand-new hotels created; one sent to a human. Zero contradictions.
 
@@ -122,10 +122,10 @@ If anything ever looks wrong mid-take: press **R**, go back with **←**, and re
 ## 4:15–4:50 · TRY TO FOOL IT [PROTO 04]
 
 **ON SCREEN:** the "Try to fool it" card with five presets.
-**DO:** press `2` (Wrong pin, 400 m off). Wait for the amber "HUMAN REVIEW" card. Then press `4` (Spanish room name).
+**DO:** press `2` (Wrong pin, 400 m off). Wait for the yellow "HUMAN REVIEW" card. Then press `4` (Spanish room name).
 
 > **SAY:** Let's try to fool it. I'll take a real hotel, Address Downtown, drop the phone and address, and move its pin four hundred metres.
-> *(trace: parsed → candidates → scored → amber)*
+> *(trace: parsed → candidates → scored → yellow)*
 > It found the right hotel. But the name matches and the location doesn't, and there's no phone or address to settle it. So it says: "I'm not sure, sending to a human," and shows exactly why.
 > That's what you want from a production system: it knows when it doesn't know.
 > *(`4`)*
