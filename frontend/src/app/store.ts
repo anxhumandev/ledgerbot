@@ -1,17 +1,33 @@
 import { create } from "zustand";
+import { qs } from "../lib/format";
 
-export const SCENES = [
-  { id: "00", title: "Cold Open" },
-  { id: "01", title: "The Mess" },
-  { id: "02", title: "Live Onboarding" },
-  { id: "03", title: "The Inspector" },
-  { id: "04", title: "Break It" },
-  { id: "05", title: "Error Budget" },
-  { id: "06", title: "Supplier Health" },
-  { id: "07", title: "Ranking for Agents" },
-  { id: "08", title: "The Arena" },
-  { id: "09", title: "Impact & Architecture" },
+/** Scene order. `key` is stable (hotkey lists, research notes); `id` is the on-screen number.
+ *  `optional` scenes are skipped by next/previous in the short cut (?short=1) and marked in the scene menu. */
+const ORDER = [
+  { key: "cold", title: "Cold Open" },
+  { key: "mess", title: "The Mess" },
+  { key: "onboard", title: "Live Onboarding" },
+  { key: "inspect", title: "The Inspector" },
+  { key: "review", title: "Human Review" },
+  { key: "dial", title: "Error Budget" },
+  { key: "health", title: "Supplier Health" },
+  { key: "shelf", title: "Portal & API" },
+  { key: "rank", title: "Ranking for Agents", optional: true },
+  { key: "arena", title: "The Arena" },
+  { key: "impact", title: "Impact & Architecture" },
 ] as const;
+
+export type SceneKey = (typeof ORDER)[number]["key"];
+export const SCENES: { key: SceneKey; id: string; title: string; optional: boolean }[] =
+  ORDER.map((s, i) => ({ key: s.key, title: s.title, optional: "optional" in s && s.optional, id: String(i).padStart(2, "0") }));
+export const SHORT_CUT = qs.get("short") === "1";
+export const sceneIndex = (key: SceneKey) => SCENES.findIndex((s) => s.key === key);
+/** Next scene index in direction `dir`, skipping optional scenes in the short cut. */
+export const stepScene = (from: number, dir: 1 | -1) => {
+  let i = from + dir;
+  while (SHORT_CUT && i > 0 && i < SCENES.length - 1 && SCENES[i].optional) i += dir;
+  return Math.max(0, Math.min(SCENES.length - 1, i));
+};
 
 export type WSMsg = { topic: string; type: string; payload: any; ts: number };
 type Listener = (m: WSMsg) => void;
@@ -52,7 +68,7 @@ export const useApp = create<AppState>((set, get) => ({
   searchOpen: false,
   setSearch: (open) => set({ searchOpen: open }),
   inspect: null,
-  openInspector: (tid) => { set({ inspect: tid, searchOpen: false }); get().setScene(3); },
+  openInspector: (tid) => { set({ inspect: tid, searchOpen: false }); get().setScene(sceneIndex("inspect")); },
   research: false,
   toggleResearch: () => set({ research: !get().research }),
   epoch: 0,
@@ -66,8 +82,8 @@ export const useApp = create<AppState>((set, get) => ({
     window.location.hash = `#${String(s).padStart(2, "0")}`;
     set({ scene: s });
   },
-  next: () => get().setScene(get().scene + 1),
-  prev: () => get().setScene(get().scene - 1),
+  next: () => get().setScene(stepScene(get().scene, 1)),
+  prev: () => get().setScene(stepScene(get().scene, -1)),
   togglePresenter: () => set({ presenter: !get().presenter }),
   bumpEpoch: () => set({ epoch: get().epoch + 1 }),
   showToast: (text, tone) => set({ toast: { id: Date.now(), text, tone } }),

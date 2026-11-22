@@ -12,12 +12,13 @@ The prototype runs on a realistic synthetic world (2,490 hotels in five cities, 
 | To… | Do |
 |---|---|
 | Start the app | From the `tessera` folder: `.venv\Scripts\python dev.py`, then open http://localhost:5174 |
-| Move between the 10 scenes | `→` / `←`, the large arrows on the screen edges, or the bottom-right bar (Back · scene menu · Next) |
+| Move between the 11 scenes | `→` / `←`, the large arrows on the screen edges, or the bottom-right bar (Back · scene menu · Next). Add `?short=1` to skip the optional scene (Ranking) for a shorter cut |
+| See the business impact so far | The orange **Impact** pill in the top bar: duplicates removed, mapping hours saved and the latest headline. It grows as the demo runs (onboarding, review decisions, sabotage, replay). Click it for every figure, how it is made, and whether it is measured, simulated or an assumption |
 | Find any hotel | **Ctrl K** or `/`, or "Find a hotel" in the top bar. Works with any supplier's spelling ("jumeira beach htl" finds Jumeirah Beach Hotel) and opens its golden record |
 | Understand a scene | **Method & research** (bottom bar) or `I`: the problem, the method, the research behind it, what is real, and the enterprise counterpart |
 | See a scene's shortcuts | **Keys** (bottom bar) or `P` |
 | Reset everything | **Reset** (bottom bar) or `R` |
-| Record the video | add `?record=1` to the URL: hides on-screen controls and the idle cursor |
+| Record the video | follow `VIDEO_SCRIPT.md` (what to click and what to say, step by step); open `?short=1` to skip the optional scene |
 
 Colour language (TBO palette): **blue** = LedgerBot / primary, **orange** = money and the best offer, **green** = automatic and safe, **yellow** = sent to a human, **purple** = the LLM was involved, **red** = failure or sabotage.
 
@@ -49,14 +50,13 @@ Four tabs:
 - **Hotel:** golden record, a row per supplier with ✓/≠ against the golden values, the evidence waterfall for the weakest link in the cluster, learned supplier trust (truth discovery: DirectConnect 0.98 … RapidStay 0.76), photo de-duplication with hero pick. `N` shows the near-miss: Atlantis The Palm vs Atlantis The Royal kept apart (different addresses, sub-brand conflict).
 - **Rooms:** physical room → offer slots → competing supplier offers, with the raw supplier names under each room. Board and cancellation never decide room identity.
 - **Activities:** Burj Khalifa products and options (OCTO model): level 148 and levels 124/125 are different products; prime and non-prime are options.
-- **Review queue (new):** the pairs LedgerBot refused to decide alone (101 at the default 1% risk budget), **most uncertain first**. Side-by-side fields with match/differs badges, LedgerBot's lean and where it sits between the thresholds, and the evidence for and against. Decide with **S** (same) / **D** (different) / **K** (skip) / **U** (undo). Progress and median seconds per decision are tracked; every decision is kept as a gold label for the next retrain.
-- **Analyst value:** the analyst sees the same evidence the model used, so a review takes seconds, and their time goes only where the model is genuinely unsure.
-- **Enterprise:** the ops review console with versioned mappings and rollback; decisions flow into training data (active learning).
+- **Try to fool it** (`F`): type any listing or use five presets. The real single-record pipeline animates: parsed → candidates (tagged by which search found them) → scored against the thresholds → decision. Presets: misspelled (merges), wrong pin 400 m off with no phone or address (**abstains to human review** and says why), sister property (stays with the right sister), Spanish room name "Habitación Doble Deluxe Vista Mar – AD" (parsed and matched; breakfast treated as an offer term), gibberish (new property). It proves the system knows when it doesn't know.
+- **Enterprise:** the same decision service handles supplier pushes record by record; mappings are versioned with rollback.
 
-### 04 · Break it: try to fool it
-- **You see:** type any listing or use five presets. The real single-record pipeline animates: parsed → candidates (tagged by which search found them) → scored against the thresholds → decision.
-- **Presets:** misspelled (merges), wrong pin 400 m off with no phone or address (**abstains to human review** and says why), sister property (stays with the right sister), Spanish room name "Habitación Doble Deluxe Vista Mar – AD" (parsed and matched; breakfast treated as an offer term), gibberish (new property).
-- **It proves:** the system knows when it doesn't know.
+### 04 · Human review: when it isn't sure, a person decides in seconds
+- **You see:** how much is decided automatically (share of candidate pairs, and how many need a person), then the queue itself: the pairs LedgerBot refused to decide alone (101 at the default 1% risk budget), **most uncertain first**. Side-by-side fields with match/differs badges, LedgerBot's lean and where it sits between the thresholds, and the evidence for and against. Decide with **S** (same) / **D** (different) / **K** (skip) / **U** (undo).
+- **It proves:** the autonomy question has a precise answer. The model acts alone only where the certified budget allows; people see the same evidence the model used, so a decision takes seconds. Progress and median seconds per decision are tracked, and every decision is kept as a gold label for the next retrain.
+- **Enterprise:** the ops review console with queues per region and supplier, SLAs, versioned mappings and rollback; decisions flow into training data (active learning).
 
 ### 05 · Error budget dial: you choose the risk, we guarantee it
 - **You see:** a dial from 0.1% to 5% maximum false merges; automation, review volume, held-out error and an illustrative ops cost recompute live.
@@ -69,16 +69,23 @@ Four tabs:
 - **Method:** Beta posteriors per supplier; offers chosen by expected value = P(book) × P(confirm at quoted price) × margin − failure cost.
 - **Enterprise:** the booking-outcome feedback loop feeding reliability on the search path.
 
-### 07 · Ranking for agents: same search, two right answers
+### 07 · Portal & API: one clean shelf, two channels
+- **You see:** two views of the same golden records (`1` / `2`).
+  - **Agent portal:** a B2B search results page for Dubai (Marina, Downtown, JBR, Palm) with meal-plan, free-cancellation and sort filters. One card per hotel, one row per real room, one choice per meal plan and cancellation term, best supplier offer pre-selected with its reason and the number of fallback offers held. A side card counts the supplier rates and records behind the screen.
+  - **Clean Feed API:** what each supplier sends for one hotel (their own field layouts: caps codes, Spanish keys, terse keys; values straight from the feed) next to LedgerBot's response from `GET /api/v1/hotels/{id}/offers`: canonical hotel, physical rooms with their identity, and per room one offer per board and cancellation term with price, booking token, confirm probability, reason and ranked fallbacks. `Space` calls the endpoint live and shows server time and round trip.
+- **It proves:** agents on the portal and API customers get the same de-duplicated shelf, and the API does no matching or LLM work at request time.
+- **Enterprise:** both channels read the mapping cache; a clean feed is a product for API buyers in its own right. Also available: `GET /api/v1/search?area=marina`.
+
+### 08 · Ranking for agents: same search, two right answers (optional)
 - **You see:** Riya (Delhi, refundable 4★ family stays) and Mark (US luxury advisor) get different top 6 lists with "why" chips. Layer margin/Platinum and reliability risk with a Kendall-τ guardrail.
 - **Numbers:** correcting for position bias lifts ranking quality against the true relevance from NDCG@10 0.888 to 0.916 (simulated logs with a known truth).
 - **Enterprise:** the ranker on the search path, retrained from logged outcomes.
 
-### 08 · The Arena: LedgerBot vs an LLM-only pipeline
+### 09 · The Arena: LedgerBot vs an LLM-only pipeline
 - **Benchmark:** same held-out pairs. LedgerBot's column is measured (hotel F1 0.91, room-and-offer F1 1.00, 0 contradictions, p95 0.3 ms per pair). The LLM-only column is a **simulated** profile with stated error-rate assumptions (F1 0.87 and 0.70, 19 contradictions) until a real baseline run (`make baseline`, needs an API key) replaces it.
 - **Judges vs Machine:** phones scan a QR code and vote on hard pairs; "Learn from your votes" retrains and re-certifies the thresholds.
 
-### 09 · Impact and architecture
+### 10 · Impact and architecture
 - **Impact replay (simulated):** 50,000 searches through both shelves with the same agents and suppliers: +22.5% gross profit per search, failed bookings 91 → 42, wrong-room incidents 26 → 6, look-to-book 2.99% → 3.36%. The annualised figure is illustrative and its formula is on screen.
 - **Architecture:** draws itself step by step (see section 4).
 
@@ -107,9 +114,9 @@ Four tabs:
 | Matcher | LightGBM with monotone constraints, isotonic calibration | Same model exported to ONNX on CPU, under 2 ms per pair |
 | Risk-controlled decisions | Learn-then-Test on a gold audit set; per-property risk | Per-supplier calibration, thresholds recertified weekly, drift monitors |
 | LLM adjudicator | Batched, cached; offline in the recording, so hard cases go to review | Asynchronous and batched on the uncertain band only, **never on the search path** |
-| Human review | Review queue tab with active-learning order | Ops console with queues per region/supplier, SLAs, and labels flowing into retraining |
+| Human review | Human Review scene with active-learning order | Ops console with queues per region/supplier, SLAs, and labels flowing into retraining |
 | Golden records | In-memory clusters with supplier exclusivity and cannot-links | Postgres + graph tables, versioned mappings, one-click rollback |
-| Rooms and offers | Room identity on physical attributes; offer slots by board, refundability, occupancy, nights | Same data model behind the B2B portal and the API (a clean de-duplicated feed is itself a product) |
+| Rooms and offers | Room identity on physical attributes; offer slots by board, refundability, occupancy, nights; served to the agent portal view and the Clean Feed API (Scene 07) | Same data model behind the B2B portal and the API (a clean de-duplicated feed is itself a product) |
 | Offer selection | Expected value with Beta-posterior reliability | Offer selector on the search path, under 3 ms |
 | Ranking | IPW LambdaRank per agent persona, Kendall-τ guardrail | Ranker retrained from logged searches and bookings; triggered A/B tests |
 | Feedback loop | Simulated booking stream and sabotage | Real outcomes (confirmations, 409/price mismatch, timeouts, wrong-room complaints) → feature store → reliability + retraining |
@@ -120,8 +127,8 @@ Four tabs:
 
 ## 5. What is real and what is simulated
 
-- **Real computation:** the synthetic world and its noise, normalisation and parsing, candidate search, matcher, calibration, risk control and its held-out check, clustering, rooms and offers, activities, truth discovery, photo de-duplication, ranking (trained on simulated logs), the Break-It pipeline, the review queue and search.
-- **Simulated, and labelled:** booking outcomes and sabotage (Scene 06), the 50,000-search replay (Scene 09), the LLM-only benchmark column (Scene 08), human review resolution inside the offline build.
+- **Real computation:** the synthetic world and its noise, normalisation and parsing, candidate search, matcher, calibration, risk control and its held-out check, clustering, rooms and offers, activities, truth discovery, photo de-duplication, ranking (trained on simulated logs), the Try-to-fool-it pipeline, the review queue, search, the agent portal and the Clean Feed API.
+- **Simulated, and labelled:** booking outcomes and sabotage (Scene 06), the 50,000-search replay (Scene 10), the LLM-only benchmark column (Scene 09), human review resolution inside the offline build.
 - **Illustrative:** crore figures, always shown with their formula.
 - **Offline by default:** without an API key, the LLM adjudicator is off and uncertain pairs go to review; the cost meter shows ₹0.00 LLM spend.
 

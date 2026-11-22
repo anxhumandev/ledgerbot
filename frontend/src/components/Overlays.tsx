@@ -71,8 +71,8 @@ export function SearchPalette() {
 export function ResearchPanel() {
   const open = useApp((s) => s.research);
   const scene = useApp((s) => s.scene);
-  const id = SCENES[scene].id;
-  const n = RESEARCH[id];
+  const { id, key } = SCENES[scene];
+  const n = RESEARCH[key];
   return (
     <AnimatePresence>
       {open && n && (

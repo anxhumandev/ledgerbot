@@ -48,4 +48,3 @@ export const BOARD: Record<string, string> = { RO: "Room only", BB: "Breakfast",
 
 export const qs = new URLSearchParams(window.location.search);
 export const REDUCE_MOTION = qs.get("reduceMotion") === "1" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-export const RECORD_MODE = qs.get("record") === "1";

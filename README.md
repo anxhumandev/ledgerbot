@@ -72,9 +72,12 @@ Set `$env:WORLD="large"` before the generate step for the recording world. Set `
 | `O` | Start onboarding (Scene 02) |
 | `Shift+1`..`Shift+5` | Sabotage supplier 1–5 (Scene 06) |
 | `Shift+0` | Heal all suppliers (Scene 06) |
-| `1`, `2`, `3` | Ranking mode toggle — relevance / +margin & platinum / +reliability (Scene 07) |
-| `A`, `B` | Toggle sub-views (Scene 08, 09) |
-| `L` | Learn from votes (Scene 08) |
+| `H`, `M`, `A`, `F` | Inspector tabs — Hotel / Rooms / Activities / Try to fool it (Scene 03) |
+| `S`, `D`, `K`, `U` | Review — same / different / skip / undo (Scene 04) |
+| `1`, `2`, `Space` | Agent portal / Clean Feed API / call the API live (Scene 07) |
+| `1`, `2`, `3` | Ranking mode toggle — relevance / +margin & platinum / +reliability (Scene 08) |
+| `A`, `B` | Toggle sub-views (Scene 09, 10) |
+| `L` | Learn from votes (Scene 09) |
 
 ---
 
@@ -82,15 +85,15 @@ Set `$env:WORLD="large"` before the generate step for the recording world. Set `
 
 | Parameter | Effect |
 |-----------|--------|
-| `?record=1` | Recording mode — hides the cursor after 2 s of idle, disables hover tooltips |
 | `?reduceMotion=1` | Accessibility — disables animations |
+| `?short=1` | Short cut — next/previous skip the optional scene (Ranking) |
 
 ---
 
 ## Phone Voting (Judges vs Machine)
 
 1. Connect your phone to the **same Wi-Fi** network as the presenter's laptop.
-2. On Scene 08B, scan the **QR code** displayed on screen.
+2. On Scene 09B, scan the **QR code** displayed on screen.
 3. Enter a nickname and vote on hotel pairs before the countdown expires.
 
 ---
@@ -127,9 +130,9 @@ Built for **TBO VoyageHack 4.0** · Problem 3 (Multi Supplier Optimization)
 ## Recording the demo video
 
 1. **Start fresh.** Stop any running servers, then from the repo root run `.venv\Scripts\python dev.py` (or `make dev`). A server started before a code change keeps serving the old code.
-2. **No API key?** Run `make baseline-sim` once (Windows: `cd backend; ..\.venv\Scripts\python -m app.eval.baseline_sim`). Scene 08 then shows the LLM-only column labelled **SIMULATED**. Say so in the voice-over, e.g. *"The LLM-only column is a simulated profile; LedgerBot's column is measured."*
-3. **Open** `http://localhost:5174/?record=1` in Chrome or Edge and press **F11** for full screen. The stage is designed at 1920 × 1080 and stretches to fill any window shape, so nothing is cut off and there are no side bars. Full screen on a 16:9 display (e.g. 1536 × 864 at 125 % scaling, which is 1920 × 1080 physical) is pixel-identical to the design.
-4. **Record** with Win + Alt + R (Xbox Game Bar) or OBS at 1920 × 1080. Press `R` before every take.
+2. **No API key?** Run `make baseline-sim` once (Windows: `cd backend; ..\.venv\Scripts\python -m app.eval.baseline_sim`). Scene 09 then shows the LLM-only column labelled **SIMULATED**. Say so in the voice-over, e.g. *"The LLM-only column is a simulated profile; LedgerBot's column is measured."*
+3. **Open** `http://localhost:5174/?short=1` in Chrome or Edge and press **F11** for full screen. Follow `VIDEO_SCRIPT.md`: it says what to click and what to say, step by step. The stage is designed at 1920 × 1080 and stretches to fill any window shape, so nothing is cut off and there are no side bars. Full screen on a 16:9 display (e.g. 1536 × 864 at 125 % scaling, which is 1920 × 1080 physical) is pixel-identical to the design.
+4. **Record** with Win + Alt + R (Xbox Game Bar) or OBS at 1920 × 1080. Click **Reset** (or press `R`) before every take.
 
 ## Run-of-show (about 8–9 minutes)
 
@@ -140,15 +143,18 @@ Press `R` before every take: it resets simulation, onboarding, votes, sabotage, 
 | 00 Cold Open | Nine raw rows for one Atlantis The Palm room fold into one card with the best offer and its alternatives. Stats underneath are computed from the world. | `Space` |
 | 01 The Mess | A teammate hunts for the cheapest Deluxe King, breakfast, free cancellation on the raw feed, then on LedgerBot. Correct clicks stop the timer. | `1`, `2`, `0` |
 | 02 Live Onboarding | NovaBeds (never seen before) is blocked, scored, routed and clustered live; NovaBeds nodes fly into the Dubai graph. Ends with violations and the guarantee. | `O` |
-| 03 Inspector | Golden record, supplier diff table, Explain waterfall for the weakest edge, near-miss (Atlantis Palm vs Royal), learned source trust, photo dedup; Rooms tab (physical room → offer slots → competing offers); Activities tab (Burj Khalifa products and options). | `H` `M` `A`, `N` |
-| 04 Break It | Presets run the real single-record pipeline and show every stage. Misspellings and the Spanish room name ("Habitación Doble Deluxe Vista Mar – AD" → Deluxe · Sea View, breakfast as an offer term) merge; the sister property stays separate; gibberish becomes a new property. Whether the wrong-pin preset abstains to review depends on the review band left by α and β (see *How the numbers are made*). | `1`–`5`, `Enter` |
+| 03 Inspector | Golden record, supplier diff table, Explain waterfall for the weakest edge, near-miss (Atlantis Palm vs Royal), learned source trust, photo dedup; Rooms tab (physical room → offer slots → competing offers); Activities tab (Burj Khalifa products and options); **Try to fool it** tab: presets run the real single-record pipeline (misspelling and Spanish room name merge, sister property stays separate, wrong pin abstains to review, gibberish becomes a new property). | `H` `M` `A` `F`, `N`, `1`–`5` |
+| 04 Human Review | Share of candidate pairs decided automatically and how many need a person; the queue of uncertain pairs, most uncertain first, with the model's evidence. Decisions are timed and kept as training labels. | `S` `D` `K` `U` |
 | 05 Error Budget | Turn the dial (arrows, drag, or a USB MIDI knob on CC 1). Automation, review volume and the held-out false-merge rate recompute live; below the certifiable range it refuses to auto-merge. | `↑` `↓` |
 | 06 Supplier Health | `Shift+2` sabotages GlobalBeds (35% price jumps). Its score falls only as observed bookings fail; offer slots switch suppliers and a toast counts them. `Shift+0` heals. | `Shift+1..5`, `Shift+0` |
-| 07 Ranking | Riya vs Mark on the same search; layer margin/platinum and reliability risk with a Kendall-τ guardrail. Proof inset: naive vs IPW NDCG@10. | `1` `2` `3` |
-| 08 Arena | A: benchmark board vs the cached LLM-only baseline, corner cases, reliability diagram. B: phones scan the QR and vote; `Space` pushes a pair / reveals; `L` retrains on the votes. | `A` `B`, `Space`, `L` |
-| 09 Impact | A: 50,000 simulated searches through both shelves at high speed. B: the production architecture draws itself step by step. | `A` `B`, `Space` |
+| 07 Portal & API | The same golden records as an agent's search results page (filters, one row per real room, best offer pre-selected) and as the Clean Feed API next to the payloads suppliers send. `Space` calls the API live. | `1` `2`, `Space` |
+| 08 Ranking *(optional)* | Riya vs Mark on the same search; layer margin/platinum and reliability risk with a Kendall-τ guardrail. Proof inset: naive vs IPW NDCG@10. Skipped by `?short=1`. | `1` `2` `3` |
+| 09 Arena | A: benchmark board vs the cached LLM-only baseline, corner cases, reliability diagram. B: phones scan the QR and vote; `Space` pushes a pair / reveals; `L` retrains on the votes. | `A` `B`, `Space`, `L` |
+| 10 Impact | A: 50,000 simulated searches through both shelves at high speed. B: the production architecture draws itself step by step. | `A` `B`, `Space` |
 
-Move between scenes with `→` / `←`, the large arrows on the left and right edges, or the bottom-right bar (**Reset**, **Back**, a scene menu, **Next: …**, **Keys**). Every hotkey action also has an on-screen button (fold the cold open, start the Scene 01 timers, onboard NovaBeds, run the replay, draw the architecture step by step or all at once). `P` toggles a presenter overlay with the scene's keys. Record with `?record=1`: it hides the on-screen controls and the cursor after 2 s idle.
+The orange **Impact** pill in the top bar keeps a running business ledger across scenes: duplicates removed and mapping hours saved from the start, then NovaBeds records mapped, review decisions, failed bookings avoided after sabotage, and the replay's profit lift. Click it to see how each figure is made and whether it is measured, simulated or an assumption (the minutes of manual mapping per record are `MANUAL_MAPPING_MIN_PER_RECORD` in `backend/app/config.py`).
+
+Move between scenes with `→` / `←`, the large arrows on the left and right edges, or the bottom-right bar (**Reset**, **Back**, a scene menu, **Next: …**, **Keys**). Every hotkey action also has an on-screen button (fold the cold open, start the Scene 01 timers, onboard NovaBeds, run the replay, draw the architecture step by step or all at once). `P` toggles a presenter overlay with the scene's keys. The cold open holds on the nine raw rows until you click **Fold into one card** (or press `Space`).
 
 ---
 

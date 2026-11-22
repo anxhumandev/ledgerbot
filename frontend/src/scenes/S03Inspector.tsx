@@ -1,12 +1,12 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useApp } from "../app/store";
-import ReviewQueue from "./ReviewQueue";
+import BreakIt from "./S04BreakIt";
 import { Button, Caption, Card, Chip, Cite, Explain, Photo, SceneHeader, Skeleton, SupplierChip, T, Toggle, cx, rise } from "../design/primitives";
 import { formatINR, SUPPLIERS } from "../lib/format";
 import { useFetch, useHotkeys } from "../lib/hooks";
 
-type Tab = "hotel" | "rooms" | "activities" | "review";
+type Tab = "hotel" | "rooms" | "activities" | "fool";
 
 export default function Inspector() {
   const [tab, setTab] = useState<Tab>("hotel");
@@ -18,12 +18,12 @@ export default function Inspector() {
   const { data } = useFetch<any>(id ? `/clusters/${id}` : null, [id]);
   const [nearMiss, setNearMiss] = useState(false);
   const { data: nm } = useFetch<any>(nearMiss ? "/clusters/near-miss" : null, [nearMiss]);
-  useHotkeys({ h: () => setTab("hotel"), m: () => setTab("rooms"), a: () => setTab("activities"), q: () => setTab("review"), n: () => { setTab("hotel"); setNearMiss((v) => !v); } });
+  useHotkeys({ h: () => setTab("hotel"), m: () => setTab("rooms"), a: () => setTab("activities"), f: () => setTab("fool"), n: () => { setTab("hotel"); setNearMiss((v) => !v); } });
 
   return (
     <div className="h-full flex flex-col">
-      <SceneHeader headline="Every merge comes with a reason." subline="A golden record per property, built from every supplier, with the evidence on display."
-        right={<Toggle value={tab} onChange={setTab} options={[{ value: "hotel", label: "Hotel" }, { value: "rooms", label: "Rooms" }, { value: "activities", label: "Activities" }, { value: "review", label: "Review queue" }]} />} />
+      <SceneHeader headline={tab === "fool" ? "Try to fool it." : "Every merge comes with a reason."} subline={tab === "fool" ? "Type any supplier listing. The real pipeline runs on one record: parse, find candidates, score, decide. When it is unsure, it says so." : "A golden record per property, built from every supplier, with the evidence on display."}
+        right={<Toggle value={tab} onChange={setTab} options={[{ value: "hotel", label: "Hotel" }, { value: "rooms", label: "Rooms" }, { value: "activities", label: "Activities" }, { value: "fool", label: "Try to fool it" }]} />} />
       {featured && (tab === "hotel" || tab === "rooms") && (
         <div className="flex gap-2 mb-4 flex-wrap">
           {id && !featured.slice(0, 9).some((f) => f.tessera_id === id) && data?.golden && (
@@ -41,7 +41,7 @@ export default function Inspector() {
         {tab === "hotel" && (data ? <HotelTab d={data} nearMiss={nearMiss} nm={nm} toggleNM={() => setNearMiss((v) => !v)} /> : <Skeleton className="w-full h-full" />)}
         {tab === "rooms" && (data ? <RoomsTab d={data} /> : <Skeleton className="w-full h-full" />)}
         {tab === "activities" && <ActivitiesTab />}
-        {tab === "review" && <ReviewQueue />}
+        {tab === "fool" && <BreakIt embedded />}
       </div>
     </div>
   );

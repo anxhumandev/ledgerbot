@@ -10,7 +10,8 @@ const FIELDS: [string, string, string][] = [
   ["lat", "Latitude", "optional"], ["lng", "Longitude", "optional"], ["room_name", "Room name", "e.g. DLX DBL SV BB NRF"],
 ];
 
-export default function BreakIt() {
+/** Single-record pipeline trace. Rendered as the Inspector's "Try to fool it" tab (embedded) or on its own. */
+export default function BreakIt({ embedded = false }: { embedded?: boolean }) {
   const { data: presets } = useFetch<any[]>("/pipeline/presets");
   const [rec, setRec] = useState<any>({ name: "", address: "", phone: "", lat: "", lng: "", room_name: "" });
   const [trace, setTrace] = useState<any>(null);
@@ -63,7 +64,7 @@ export default function BreakIt() {
 
   return (
     <div className="h-full flex flex-col">
-      <SceneHeader headline="Try to fool it." subline="Paste any supplier listing. The real pipeline runs on one record: parse, block, score, decide. Abstaining is a feature." />
+      {!embedded && <SceneHeader headline="Try to fool it." subline="Paste any supplier listing. The real pipeline runs on one record: parse, block, score, decide. Abstaining is a feature." />}
       <div className="grid grid-cols-[520px_minmax(0,1fr)] gap-6 flex-1 min-h-0">
         <Card className="p-6 flex flex-col">
           <Caption>Paste or type any supplier listing</Caption>

@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Button, Caption, Chip, Photo, Skeleton, SupplierChip, T, Ticker } from "../design/primitives";
-import { formatINR, groupIN, RECORD_MODE, REDUCE_MOTION } from "../lib/format";
+import { formatINR, groupIN, REDUCE_MOTION } from "../lib/format";
 import { useFetch, useHotkeys } from "../lib/hooks";
 
 function RawRow({ r }: { r: any }) {
@@ -20,21 +20,15 @@ function RawRow({ r }: { r: any }) {
 export default function ColdOpen() {
   const { data } = useFetch<any>("/world/cold-open");
   const [folded, setFolded] = useState(false);
-  useEffect(() => {
-    if (!data) return;
-    if (RECORD_MODE) return; // recording: hold on the nine rows until the presenter presses Space
-    const t = setTimeout(() => setFolded(true), 1500);
-    return () => clearTimeout(t);
-  }, [data]);
   useHotkeys({ " ": () => setFolded((f) => !f) });
   if (!data) return <Skeleton className="w-full h-[700px]" />;
   const s = data.stats;
   const best = data.best.winner;
   return (
     <div className="h-full flex flex-col items-center relative">
-      {!RECORD_MODE && <div className="absolute right-0 top-0 z-10">
+      <div className="absolute right-0 top-0 z-10">
         <Button variant="ghost" onClick={() => setFolded((f) => !f)} kbd="Space">{folded ? "Show the 9 raw listings" : "Fold into one card"}</Button>
-      </div>}
+      </div>
       <motion.h1 initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={T}
         className="font-serif text-[52px] leading-[1.12] tracking-[-0.015em] text-ink text-center mt-2">
         {folded ? "Nine listings. One room." : "Nine listings."}

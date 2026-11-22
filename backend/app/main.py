@@ -17,7 +17,7 @@ from fastapi.responses import ORJSONResponse  # noqa: E402
 
 from app.demo import DEMO  # noqa: E402
 from app.pipeline.cost import METER  # noqa: E402
-from app.routers import core, pipeline, sim  # noqa: E402
+from app.routers import core, feed, pipeline, sim  # noqa: E402
 from app.ws import HUB  # noqa: E402
 
 
@@ -60,7 +60,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="LedgerBot", default_response_class=ORJSONResponse, lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origin_regex=r"https?://.*", allow_credentials=True,
                    allow_methods=["*"], allow_headers=["*"])
-for r in (core.router, pipeline.router, sim.router):
+for r in (core.router, pipeline.router, sim.router, feed.router):
     app.include_router(r, prefix="/api")
 
 

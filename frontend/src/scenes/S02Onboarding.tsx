@@ -5,7 +5,7 @@ import ForceGraph2D from "react-force-graph-2d";
 import { Caption, Card, Chip, Kbd, SceneHeader, Skeleton, SupplierChip, T, Ticker } from "../design/primitives";
 import { post } from "../lib/api";
 import { useApp } from "../app/store";
-import { groupIN, pct, RECORD_MODE, SUPPLIERS } from "../lib/format";
+import { groupIN, pct, SUPPLIERS } from "../lib/format";
 import { useFetch, useHotkeys } from "../lib/hooks";
 import { useTopic } from "../lib/ws";
 
@@ -331,8 +331,7 @@ export default function Onboarding() {
               }} />
           </div>
           {/* map controls */}
-          {!RECORD_MODE && (
-            <div className="absolute right-3 top-3 flex items-center gap-2">
+          <div className="absolute right-3 top-3 flex items-center gap-2">
               <form onSubmit={(e) => { e.preventDefault(); findOnMap(); }} className="flex items-center gap-2 rounded-full bg-surface border border-line shadow-card pl-3 pr-1 py-1">
                 <Search size={15} className="text-ink-3" />
                 <input value={query} onChange={(e) => { setQuery(e.target.value); if (!e.target.value) focus.current = null; }}
@@ -345,7 +344,6 @@ export default function Onboarding() {
                 <button onClick={() => { focus.current = null; setQuery(""); fgRef.current?.zoomToFit(600, 50); }} className="px-2.5 py-2 hover:bg-surface-2 border-l border-line" title="Fit everything"><Maximize2 size={16} /></button>
               </div>
             </div>
-          )}
           {/* legend */}
           <div className="absolute left-3 bottom-3 right-3 flex items-end justify-between gap-4 pointer-events-none">
             <div className="rounded-2xl bg-surface/95 border border-line shadow-card px-4 py-3">
@@ -359,11 +357,9 @@ export default function Onboarding() {
                 <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-full border-2" style={{ borderColor: "#6B3FD4" }} />LLM consulted</span>
               </div>
             </div>
-            {!RECORD_MODE && (
-              <div className="rounded-full bg-surface/95 border border-line shadow-card px-3 py-1.5 text-[13px] text-ink-2 flex items-center gap-2">
+            <div className="rounded-full bg-surface/95 border border-line shadow-card px-3 py-1.5 text-[13px] text-ink-2 flex items-center gap-2">
                 <MousePointerClick size={14} className="text-lagoon" />Hover for details · scroll to zoom · drag to pan · click a hotel to inspect it
               </div>
-            )}
           </div>
           <div className="absolute left-4 top-3 text-[13px] text-ink-3 pointer-events-none">Dubai shown ({groupIN(graphData.nodes.length)} listings) · counters cover all {feed.cities.length} cities</div>
         </Card>

@@ -4,24 +4,24 @@ import { EdgeArrows, Footer, PresenterOverlay, Rail, TopBar } from "../component
 import { ResearchPanel, SearchPalette } from "../components/Overlays";
 import { Skeleton, Stage, T, ToastHost } from "../design/primitives";
 import { api, post } from "../lib/api";
-import { RECORD_MODE } from "../lib/format";
 import { typing } from "../lib/hooks";
 import { resetDemo } from "../lib/demo";
 import { connectWS } from "../lib/ws";
-import { useApp } from "./store";
+import { type SceneKey, SCENES, useApp } from "./store";
 
-const scenes = [
-  lazy(() => import("../scenes/S00ColdOpen")),
-  lazy(() => import("../scenes/S01Mess")),
-  lazy(() => import("../scenes/S02Onboarding")),
-  lazy(() => import("../scenes/S03Inspector")),
-  lazy(() => import("../scenes/S04BreakIt")),
-  lazy(() => import("../scenes/S05Dial")),
-  lazy(() => import("../scenes/S06Suppliers")),
-  lazy(() => import("../scenes/S07Ranking")),
-  lazy(() => import("../scenes/S08Arena")),
-  lazy(() => import("../scenes/S09Impact")),
-];
+const SCENE_COMPONENTS: Record<SceneKey, ReturnType<typeof lazy>> = {
+  cold: lazy(() => import("../scenes/S00ColdOpen")),
+  mess: lazy(() => import("../scenes/S01Mess")),
+  onboard: lazy(() => import("../scenes/S02Onboarding")),
+  inspect: lazy(() => import("../scenes/S03Inspector")),
+  review: lazy(() => import("../scenes/SReview")),
+  dial: lazy(() => import("../scenes/S05Dial")),
+  health: lazy(() => import("../scenes/S06Suppliers")),
+  shelf: lazy(() => import("../scenes/SShelf")),
+  rank: lazy(() => import("../scenes/S07Ranking")),
+  arena: lazy(() => import("../scenes/S08Arena")),
+  impact: lazy(() => import("../scenes/S09Impact")),
+};
 const VotePage = lazy(() => import("../scenes/VotePage"));
 
 // read once at module load so StrictMode double effects cannot swallow the first-visit hint
@@ -34,26 +34,6 @@ const SHOW_HINT = (() => {
     return true;
   }
 })();
-
-function useRecordMode() {
-  useEffect(() => {
-    if (!RECORD_MODE) return;
-    document.body.classList.add("recording");
-    let t: ReturnType<typeof setTimeout>;
-    const idle = () => {
-      document.body.classList.remove("record-mode");
-      clearTimeout(t);
-      t = setTimeout(() => document.body.classList.add("record-mode"), 2000);
-    };
-    idle();
-    window.addEventListener("mousemove", idle);
-    return () => {
-      clearTimeout(t);
-      window.removeEventListener("mousemove", idle);
-      document.body.classList.remove("recording", "record-mode");
-    };
-  }, []);
-}
 
 class SceneBoundary extends Component<{ children: ReactNode }, { error: boolean }> {
   state = { error: false };
@@ -72,7 +52,6 @@ class SceneBoundary extends Component<{ children: ReactNode }, { error: boolean 
 function StageApp() {
   const { scene, epoch, presenter, toast } = useApp();
   const [health, setHealth] = useState<any>(null);
-  useRecordMode();
   useEffect(() => {
     connectWS();
     const poll = () => api("/health").then((h) => { setHealth(h); useApp.setState({ llm: h.llm }); }).catch(() => setHealth(null));
@@ -84,8 +63,8 @@ function StageApp() {
       if (m && parseInt(m[1], 10) !== useApp.getState().scene) useApp.getState().setScene(parseInt(m[1], 10));
     };
     window.addEventListener("hashchange", onHash);
-    // one-time hint for first-time viewers (never in recordings)
-    const hint = !RECORD_MODE && SHOW_HINT ? setTimeout(() => useApp.getState().showToast("Press → for the next scene, P for this scene's keys, or use the controls bottom-right"), 2500) : undefined;
+    // one-time hint for first-time viewers
+    const hint = SHOW_HINT ? setTimeout(() => useApp.getState().showToast("Press → for the next scene, P for this scene's keys, or use the controls bottom-right"), 2500) : undefined;
     return () => { clearInterval(id); clearTimeout(hint); window.removeEventListener("hashchange", onHash); };
   }, []);
   useEffect(() => {
@@ -103,7 +82,7 @@ function StageApp() {
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
   }, []);
-  const Scene = scenes[scene];
+  const Scene = SCENE_COMPONENTS[SCENES[scene].key];
   return (
     <Stage>
       <TopBar />

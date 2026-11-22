@@ -1,257 +1,283 @@
-# LedgerBot: video script (one narrator)
+# LedgerBot: recording guide
 ### TBO VoyageHack 4.0 · Problem 3 · Team TravellerTech · narrated by Anshuman
 
-**Runtime:** about 9 minutes, about 1,150 words at a calm 135 words per minute.
-**Sources:** **[PROTO]** is the LedgerBot prototype (scene numbers match the app). **[DECK]** is the 6-slide proposal deck.
-**Story:** this is TBO's next supply platform. The prototype is the proof; the deck is the plan.
+This is a run sheet. Each scene is a list of steps. Every step tells you **what to do on screen** (👆) and then **exactly what to say** (🎙). Do one step, say its line, move to the next.
+
+**Length:** about 9 min 40 s (about 1,100 spoken words at a calm pace, plus the moments where you stay quiet). TBO's limit is 10 minutes.
+**What you need:** the app at http://localhost:5174, the deck in a second window, a screen recorder, a mic.
 
 ---
 
-## How to use this script
+## Before you start (5 minutes)
 
-- **SAY** is your narration. Loosen it into your own voice; keep the facts.
-- **DO** is what you press. Every key also has an on-screen button, but in recording mode (`?record=1`) the on-screen controls are hidden, so use the keys.
-- **Numbers** are the values the prototype shows after a reset (`R`), measured on our recording build. Two depend on timing and can differ slightly in your take: the onboarding time in Scene 02 and the number of switched offers in Scene 06. If the screen shows a different value, say the screen's value. Never say a number that isn't on screen or in the deck.
-- **Two-pass recording (strongly recommended, since you are alone):** pass 1, record the screen while you operate it, silently. Pass 2, record your voice over the edited footage. You never have to talk and press keys at the same time.
+1. **Start the app** (skip if it's already running). In PowerShell:
+   `cd "D:\Coding\PROJECTS\TBO\TESSERA Unified Supply Intelligence\tessera"; .venv\Scripts\python dev.py`
+   Wait until http://localhost:5174 shows "Nine listings."
+2. **Open http://localhost:5174/?short=1** in Chrome or Edge and press **F11** for full screen. Set the screen to 1920×1080 if you can. (`?short=1` makes **Next** skip the optional Ranking scene. Use plain http://localhost:5174 if you want to include it.)
+3. **Click once anywhere on the page** so it listens to your keys.
+4. **Click Reset** (bottom right). A "Demo state reset" message flashes; wait until it disappears.
+5. **Open the deck** in present mode in a second window. You'll switch to it four times (marked **DECK**).
+6. **Start recording** (Win + Alt + R, or OBS at 1920×1080, 60 fps). Stay silent for 2 seconds before you speak.
 
----
+### How to move around
+- **Next scene:** click **Next: …** (bottom right, blue) or the big **›** arrow on the right edge, or press **→**.
+- **Previous scene:** **Back** (bottom right), the **‹** arrow, or **←**.
+- **Something went wrong?** Click **Reset**, go back to the scene, and redo it. You can record every scene as its own clip and join them later.
+- **Forgot a key?** Click **Keys** (bottom right) or press **P**.
 
-## Before you hit record (5 minutes)
+### Rules for what you say
+- Say the lines in your own words if you like, but **keep the numbers exactly as written**. If the screen shows a different number, say the screen's number.
+- Say **"simulated"** for the bookings, the replay and the LLM-only column, and **"illustrative"** for the crore figures. Always say "at three minutes a record" with the mapping hours.
+- Short sentences. Pause after every number.
 
-1. Start the app from the `tessera` folder: `.venv\Scripts\python dev.py`. Wait until http://localhost:5174 shows the cold open.
-2. Open **http://localhost:5174/?record=1** in the browser, press **F11** (full screen), set the screen to 1920×1080.
-3. Click once on the page so it has keyboard focus, then press **R** (reset). Nothing appears on screen when you reset in recording mode; that is intended.
-4. Have the deck open in present mode in a second window for the slide sections.
-5. Start screen capture (60 fps). Leave 2 s of stillness at the start and end of each scene for clean cuts.
-
-If anything ever looks wrong mid-take: press **R**, go back with **←**, and redo that scene. Each scene can be recorded as its own clip.
-
----
-
-## 0:00–0:30 · COLD OPEN: "Nine listings. One room." [PROTO 00]
-
-**ON SCREEN:** nine supplier rows for one Atlantis The Palm room: different names, codes and prices, from five suppliers.
-**DO:** hold 2 s in silence. Press `Space`: the rows slide together and fold into one card.
-
-> **SAY:** These are nine listings from five suppliers.
-> *(beat)*
-> They're all the same room.
-> *(`Space`, the rows fold into one card)*
-> Every day, TBO's agents have to work this out themselves, thousands of times, on every search. And when somebody gets it wrong, a family arrives in Dubai to the wrong room.
-> We built LedgerBot: a system that gets it right, proves it, and gets smarter with every booking.
-
-**Note:** don't talk over the fold animation. Let it land, then speak.
+### Easiest way to record alone (recommended)
+Record in **two passes**: first record the screen while you follow the 👆 steps **without talking**. Then play the video back and record your voice reading the 🎙 lines over it. You never have to click and talk at the same time.
 
 ---
 
-## 0:30–1:00 · WHO WE ARE AND WHY IT MATTERS [DECK: Cover]
+## Scene 00 · Cold open (0:00–0:30)
 
-> **SAY:** I'm Anshuman, from team TravellerTech, with Parv and Aarav. This is LedgerBot.
-> TBO receives the same hotel, room and tour from many suppliers: direct contracts, bed banks, and now three acquired supply stacks: BookaBed, Jumbonline and Classic Vacations.
-> Hotels and ancillaries are about eighty-six percent of TBO's revenue, and TBO's own IPO prospectus lists manual mapping as a business risk.
-> So we treated this as the core of the business, not a cleanup job.
+**You start on:** "Nine listings." Nine supplier rows for one Atlantis The Palm room.
 
----
-
-## 1:00–1:45 · THE 20-SECOND CHALLENGE [PROTO 01]
-
-**ON SCREEN:** left, "Today: raw supplier feed" (about 60 rows); right, LedgerBot's clean cards. Target on top: *Deluxe King · Breakfast · Free cancellation · cheapest.*
-**DO (screen pass):** press `1` and genuinely hunt on the left; let the timer run out. Press `2`, find the Deluxe King breakfast/free-cancel chip on the right and click it (green flash). Press `0` if you need to redo it.
-
-> **SAY:** Let's make it real. Twenty seconds to find the cheapest Deluxe King with breakfast and free cancellation, the kind of request agents get every day.
-> *(left timer running)*
-> Same hotel, different names. "BB", "AD", "B&B": all the same breakfast. Many of these rows are duplicates, and a couple are even attached to the wrong room.
-> *(timer runs out and turns red)*
-> Now the same search, with LedgerBot.
-> *(right side, one click, green)*
-> Sixty-one rows became twelve clean cards. Nothing was hidden; every alternative is one click away. It's organised the way an agent thinks.
+1. 👆 Do nothing for 2 seconds.
+   🎙 "These are nine listings from five suppliers."
+   *(short pause)*
+   🎙 "They're all the same room."
+2. 👆 Click **Fold into one card** (top right) or press **Space**. Let the animation finish before you speak.
+   🎙 "TBO's agents untangle this thousands of times a day. Get it wrong, and a family lands in Dubai to the wrong room."
+3. 👆 Point the mouse at the orange counter, top left, for a second.
+   🎙 "We built LedgerBot: it gets it right, proves it, and learns from every booking. Everything here is running code, and this counter keeps score as we go."
 
 ---
 
-## 1:45–2:20 · WHY THE OBVIOUS AI SOLUTION FAILS [DECK: Typical AI build vs LedgerBot]
+## DECK · Cover slide (0:30–1:00)
 
-> **SAY:** The obvious answer in 2026 is to ask a large language model: "are these two the same hotel?"
-> At TBO's scale that has four problems.
-> One, cost and speed: about ten billion searches a year at IPO, and LLM calls cost cents and take seconds.
-> Two, no known error rate: "ninety-five percent confident" is not a guarantee.
-> Three, its answers contradict each other: A equals B, B equals C, but A doesn't equal C.
-> Four, it merges things that must stay separate: "breakfast, free cancellation" is not "room only, non-refundable".
-> So we use the LLM only where it earns its cost, and built everything else to be measurable.
+👆 Switch to the deck, cover slide.
 
----
+🎙 "I'm Anshuman, from team TravellerTech, with Parv and Aarav.
+TBO gets the same hotel, room and tour from many suppliers: direct contracts, bed banks, and three acquired stacks: BookaBed, Jumbonline and Classic Vacations.
+Hotels and ancillaries are about eighty-six percent of revenue, and TBO's IPO prospectus names manual mapping as a risk. So this is core business, not cleanup."
 
-## 2:20–2:35 · THE SIX CAPABILITIES [DECK: Six capabilities]
-
-> **SAY:** LedgerBot has six capabilities: guaranteed accuracy, rooms and offers kept apart, one truth per hotel, self-healing suppliers, the best offer rather than the cheapest, and ranking built for agents. Here they are, running.
+👆 Switch back to the app. Click **Next: The Mess**.
 
 ---
 
-## 2:35–3:20 · A NEW SUPPLIER, MAPPED LIVE [PROTO 02]
+## Scene 01 · The 20-second challenge (1:00–1:40)
 
-**ON SCREEN:** the Dubai supply graph: every dot a supplier record, every soft circle one real hotel. The NovaBeds card on the left, the five-stage funnel on top.
-**DO:** press `O`. Orange NovaBeds dots fly in and snap into clusters. Let it run to the green banner (under a minute). Stay on the wide shot.
+**You start on:** two panels. Left "Today: raw supplier feed", right "LedgerBot". The target on top: *Deluxe King · Breakfast · Free cancellation · cheapest.*
 
-> **SAY:** This is TBO's supply graph. Every dot is a supplier record; every cluster is one real hotel.
-> A new supplier just signed: NovaBeds, 802 hotels and 3,416 rooms. Today that means weeks of manual mapping.
-> *(press `O`)*
-> First, LedgerBot finds candidates cheaply: by location, by name, by meaning, and by matching photos. It never compares all pairs; that cuts the work by 99.3% and still catches 100% of the true matches.
-> Then a small learned model scores each pair in milliseconds.
-> *(orange dots snap into clusters)*
-> Each orange dot that snaps into a cluster was merged automatically. Brand-new hotels get their own spot. Anything it isn't sure about pulses yellow and goes to a human. In production an LLM looks at those first; in this recording the LLM is switched off, so they go straight to review.
-> *(green banner)*
-> About fifty seconds. 730 records, 91 percent, merged automatically; 71 brand-new hotels created; one sent to a human. Zero contradictions.
+1. 👆 Do nothing yet.
+   🎙 "Twenty seconds: find the cheapest Deluxe King with breakfast and free cancellation."
+2. 👆 Click **Start left** (or press **1**). Really try to find it in the left list; let the timer run out and turn red.
+   🎙 *(while you search)* "Same hotel, different names. 'BB', 'AD', 'B&B': all breakfast. Duplicates everywhere, and a couple of rates sit on the wrong room."
+3. 👆 When the left timer is red, click **Start right** (or press **2**). In the right panel, find the **Deluxe King** row with the **BB · free cancel** chip at the cheapest price and click it. It flashes green.
+   🎙 "Now with LedgerBot." *(click)* "Sixty-one rows became twelve clean cards. Nothing hidden; every alternative is one click away."
+
+*If you click the wrong thing, click **Clear** (or press **0**) and start again.*
 
 ---
 
-## 3:20–4:15 · EVERY MERGE HAS A REASON [PROTO 03]
+## DECK · "Typical AI build vs LedgerBot" slide (1:40–2:10)
 
-**ON SCREEN:** the Inspector on Atlantis The Palm: golden record, a row per supplier, the explanation waterfall on the right.
-**DO:** hold on the hotel → press `N` (near-miss) → `M` (Rooms) → `A` (Activities).
+👆 Switch to the deck, the "Typical AI build vs LedgerBot" slide.
 
-> **SAY:** Every merge is explainable. Here's Atlantis The Palm from five suppliers: the same phone number, identical names once the noise is cleaned up, and 157 metres apart. That's why it merged.
-> Now the hard case.
-> *(`N`: Atlantis The Palm vs Atlantis The Royal)*
-> Two Atlantis hotels: same brand, same island. A naive system merges them. LedgerBot sees different street addresses and a sub-brand conflict, Palm versus Royal, and keeps them separate.
-> *(`M`, Rooms tab)*
-> This is the key idea in our design: we separate the **room** from the **offer**. "Deluxe King, Sea View" is the physical room. Breakfast, cancellation and payment terms are the offer. The grey lines under each room are the names suppliers actually sent: bed-bank codes, Spanish, marketing names. They become one room, but the breakfast rate and the room-only rate stay separate choices, and suppliers compete inside each one.
-> *(`A`, Activities tab)*
-> Tours follow the same logic, the industry's OCTO model. Burj Khalifa level 148 and levels 124/125 are different products; prime time and non-prime are options of one product.
+🎙 "The obvious 2026 build asks a large language model about every pair. At TBO's scale that's slow and costly, has no known error rate, contradicts itself, and merges things that must stay apart, like breakfast-refundable and room-only non-refundable.
+So we use AI where it pays: a small model for the easy millions, the LLM for the hard cases, and a person only when neither is sure."
+
+👆 Switch back to the app. Click **Next: Live Onboarding**.
 
 ---
 
-## 4:15–4:50 · TRY TO FOOL IT [PROTO 04]
+## Scene 02 · A new supplier, mapped live (2:10–3:05)
 
-**ON SCREEN:** the "Try to fool it" card with five presets.
-**DO:** press `2` (Wrong pin, 400 m off). Wait for the yellow "HUMAN REVIEW" card. Then press `4` (Spanish room name).
+**You start on:** the Dubai supply graph (dots and tinted circles). On the left, the orange **NovaBeds** card.
 
-> **SAY:** Let's try to fool it. I'll take a real hotel, Address Downtown, drop the phone and address, and move its pin four hundred metres.
-> *(trace: parsed → candidates → scored → yellow)*
-> It found the right hotel. But the name matches and the location doesn't, and there's no phone or address to settle it. So it says: "I'm not sure, sending to a human," and shows exactly why.
-> That's what you want from a production system: it knows when it doesn't know.
-> *(`4`)*
-> And a room name in Spanish, "Habitación Doble Deluxe Vista Mar, AD"? Parsed as a Deluxe sea-view room with breakfast as the offer, and matched.
+1. 👆 Do nothing yet.
+   🎙 "This is TBO's supply graph: every dot a supplier record, every cluster one real hotel.
+   A new supplier just signed: NovaBeds, 802 hotels. Today that's weeks of manual mapping."
+2. 👆 Click **Click to onboard NovaBeds** on the left card (or press **O**). Orange dots start flying in. Don't touch anything until the green banner appears (about 50 seconds).
+   🎙 "LedgerBot finds candidates by location, name, meaning and photos, never comparing all pairs: 99.3 percent less work, and 100 percent of true matches still caught. A small model scores each pair in milliseconds."
+3. 👆 Keep watching. The counter top left climbs.
+   🎙 "Orange dots that snap in were merged automatically. New hotels get their own spot. Anything uncertain pulses yellow and goes to a person; the LLM is switched off in this recording."
+4. 👆 Wait for the green banner at the bottom.
+   🎙 "About fifty seconds: 730 records merged automatically, 71 new hotels, one sent to a human, zero contradictions."
 
----
-
-## 4:50–5:30 · YOU CHOOSE THE RISK. WE GUARANTEE IT. [PROTO 05]
-
-**ON SCREEN:** the dial, the automation-vs-risk chart, stats on the right.
-**DO:** press `↑` until the dial reads about 5%, pause, then press `↓` slowly, one press at a time, down to about 0.5%. (A USB MIDI knob on CC 1 also works if you have one.)
-
-> **SAY:** This is the core of the platform.
-> TBO decides how much risk it accepts. Say, at most half a percent of automatic merges may be wrong.
-> *(turn down slowly; review volume rises)*
-> LedgerBot then sets its own thresholds using Learn-then-Test, a conformal risk-control method that guarantees that ceiling with ninety-five percent confidence.
-> Tighter risk, more human review. Looser risk, more automation. It's a business decision, and now it comes with a guarantee.
-> *(point at the green chip)*
-> And on hotels the model has never seen: 0.34 percent actual error against a 0.5 percent budget. The guarantee held.
+👆 Click **Next: The Inspector**.
 
 ---
 
-## 5:30–6:20 · WHEN A SUPPLIER GOES BAD [PROTO 06]
+## Scene 03 · Every merge has a reason, and try to fool it (3:05–4:10)
 
-**ON SCREEN:** five supplier health cards, the live booking ticker, four hotel cards showing their chosen supplier.
-**DO:** hold 3 s on the calm state. Press `Shift+2` (sabotage GlobalBeds). Stay quiet for about 15 s while the score drops and the hotel cards switch supplier. `Shift+0` heals afterwards.
+**You start on:** the Inspector showing Atlantis The Palm. Tabs top right: **Hotel · Rooms · Activities · Try to fool it**.
 
-> **SAY:** Matching is half the problem. The other half is choosing which supplier to show.
-> Every booking teaches LedgerBot something: did it confirm, did the price jump, how long did it take. These are live reliability scores, with uncertainty bands. The bookings here are simulated.
-> Now a supplier starts misbehaving.
-> *(`Shift+2`; red events appear; the GlobalBeds score slides)*
-> Price jumps at checkout. Nobody told LedgerBot. It notices from the bookings themselves.
-> *(hotel cards switch supplier; message appears at the bottom)*
-> And it moves about three hundred offers to more reliable suppliers, on its own. The shelf heals itself.
-> We don't show the cheapest offer. We show the one most likely to book, confirm and earn: probability of booking, times probability of confirming, times margin.
+1. 👆 Do nothing; let the viewer see the table and the evidence bars on the right.
+   🎙 "Every merge comes with its evidence. Atlantis The Palm, from five suppliers: same phone, same name once cleaned, 157 metres apart."
+2. 👆 Click **Show a near-miss** (top of the right card) or press **N**.
+   🎙 "The hard case: Atlantis The Royal. Same brand, same island, but a different street address and a sub-brand conflict, so they stay separate."
+3. 👆 Click the **Rooms** tab (or press **M**).
+   🎙 "Our key design idea: the room is not the offer. 'Deluxe King, Sea View' is the physical room; breakfast and cancellation are the offer. The grey lines are what suppliers actually sent. One room, separate offers, suppliers competing inside each."
+4. 👆 Click the **Activities** tab (or press **A**).
+   🎙 "Tours work the same way, on the industry's OCTO model."
+5. 👆 Click the **Try to fool it** tab (or press **F**). Then click the **Sister property** chip (or press **3**). Wait until the green AUTO-MERGE card appears.
+   🎙 "Now, try to fool it. The sister property's listing: parsed, matched, scored, and it joins The Royal, not The Palm."
+6. 👆 Click the **Spanish room name** chip (or press **4**). Wait for the green card.
+   🎙 "A Spanish room name, 'Habitación Doble Deluxe Vista Mar, AD': a Deluxe sea-view room, breakfast as the offer. Matched."
 
----
+*Don't use the "Wrong pin" chip unless it shows the amber HUMAN REVIEW card in your take; its result sits right on the threshold. If it does show HUMAN REVIEW, you can say: "Name matches, location doesn't, no phone or address to settle it. So it says: I'm not sure, sending to a human."*
 
-## 6:20–6:50 · SAME SEARCH, TWO AGENTS [PROTO 07]
-
-**ON SCREEN:** Riya (Delhi, family packages) and Mark (US luxury advisor), top 6 results each.
-**DO:** press `1`, then `2`, then `3`, about 4 s apart. The cards reorder.
-
-> **SAY:** TBO's users are professionals who come back every day. Riya in Delhi sells refundable four-star family stays. Mark in the US sells suites on the Palm. Same search, two different right answers.
-> *(`2`, then `3`)*
-> On top, TBO can blend in margin and its Platinum partner hotels, and supplier reliability, with a guardrail that keeps relevance first. And we correct for the fact that people click what's on top, not just what's best.
+👆 Click **Next: Human Review**.
 
 ---
 
-## 6:50–7:40 · LEDGERBOT VS AN LLM-ONLY PIPELINE [PROTO 08]
+## Scene 04 · When it isn't sure, a person decides (4:10–4:40)
 
-**ON SCREEN (A):** the benchmark board. LedgerBot's column is measured; the LLM-only column is labelled **simulated**.
-**DO:** hold on the table 6–8 s. Optional: press `B` for the voting view and vote from your own phone (scan the QR; phone on the same Wi-Fi). Skip the voting if you're short on time; the 6-minute cut drops it anyway.
+**You start on:** "When it isn't sure, a person decides in seconds." Top right: 99.95% and 101. Below, one pair of listings side by side.
 
-> **SAY:** How does that compare with an LLM-only pipeline? We haven't run a full live LLM baseline yet, so this column is a simulated profile: the error rates are our stated assumptions for a zero-shot model judging one pair at a time, listed in our code, applied to the hardest-looking pairs of the same held-out test set. LedgerBot's column is measured.
-> *(read from the table)*
-> Under those assumptions: hotel F1 0.87 versus 0.91. Room-and-offer corner cases: 0.70 versus 1.00. Contradictory groups: 19 versus zero.
-> The point isn't the exact simulated number. It's that LedgerBot's side is measured and guaranteed, and an LLM-only design can't give you either.
->
-> *(optional voting, `B`)* At the finale, the judges can play against it. Scan, and vote "same", "different", or "same room, different offer".
-> *(after a few pairs, press `L`)* On pairs where people disagree, LedgerBot abstains, and with one click it retrains on the votes and re-certifies its thresholds; the review band started at 101 pairs, and the new size appears on screen.
+1. 👆 Do nothing for 2 seconds.
+   🎙 "How much does the AI decide alone? 99.95 percent of candidate pairs. 101 need a person.
+   This is their queue: most uncertain first, with the model's own evidence."
+2. 👆 Look at the **Agreement** badges, then click **Same hotel** (or press **S**) or **Different** (or press **D**). Do this for two pairs. Decide honestly. The median time appears in the top strip.
+   🎙 "One keystroke, a few seconds, and each decision trains the next model. It knows when it doesn't know."
 
-**Do not say:** "we ran an LLM-only pipeline", or describe a specific LLM mistake as something the LLM actually did. The corner-case carousel shows simulated answers; if it's on screen, call it "the kind of mistake we assumed".
+👆 Click **Next: Error Budget**.
 
 ---
 
-## 7:40–8:20 · THE ENTERPRISE SOLUTION [PROTO 09B → DECK: System architecture]
+## Scene 05 · You choose the risk; we guarantee it (4:40–5:15)
 
-**DO:** press `B` (Architecture), then `Space` once per step, about one step per sentence. Then cut to the deck's architecture slide.
+**You start on:** a big dial in the middle, a chart on the left, numbers on the right.
 
-> **SAY:** Here's how this runs at TBO scale.
-> Two paths. The mapping pipeline runs continuously, off the search path: supplier feeds stream in, get normalised, matched by a small model on CPU, and decided within the guaranteed error budget. The LLM only handles hard cases, asynchronously. Everything lands in a versioned golden-record graph (hotel, room, offer) with one-click rollback.
-> The search path only reads that graph: a cache lookup, the offer selector and the ranker. Our design target is under five milliseconds added per search.
-> And every booking outcome (confirmations, price jumps, timeouts, complaints) flows back to update reliability and retrain. The platform improves with use.
+1. 👆 Press **↑** until the dial reads about **5%** (or drag the dial). Pause.
+   🎙 "This is the core. TBO picks its risk: say, at most half a percent of automatic merges may be wrong."
+2. 👆 Press **↓** slowly, one press at a time, down to about **0.5%**. Watch the review volume rise.
+   🎙 "LedgerBot sets its own thresholds and proves it stays under that limit, with ninety-five percent confidence. Tighter risk, more review; looser, more automation. A business decision, with a guarantee."
+3. 👆 Point the mouse at the green **Guarantee held** chip.
+   🎙 "On hotels it has never seen: 0.34 percent error against a 0.5 percent budget. The guarantee held."
 
----
-
-## 8:20–8:35 · BUILT FOR PRODUCTION [DECK: Scalable, feasible and cutting-edge]
-
-> **SAY:** It's scalable: we never compare all pairs, and a new feed only touches what it affects. It's feasible: an open-source stack and data TBO already logs, working alongside TBO's existing mapping vendor rather than replacing it. And it's grounded in current research: conformal risk control, distilled matching, unbiased ranking.
+👆 Click **Next: Supplier Health**.
 
 ---
 
-## 8:35–9:05 · THE MONEY [PROTO 09A → DECK: Business impact and rollout]
+## Scene 06 · When a supplier goes bad (5:15–6:05)
 
-**DO:** press `A` (Impact replay), then `Space`. The two lanes race for about 12 s. Cut to the deck as the numbers settle.
+**You start on:** five supplier cards on top, a live booking list, four hotel cards at the bottom.
 
-> **SAY:** In simulation, with the same agents and the same suppliers, the LedgerBot shelf delivers 22.5 percent more gross profit per search, failed bookings drop from 91 to 42, and wrong-room incidents from 26 to 6.
-> *(cut to deck)*
-> At TBO's scale, about thirty-one and a half thousand crore of hotel bookings a year, a one percent lift in hotel look-to-book is worth about nineteen crore a year, and a tenth of a point of take rate from better offer selection is about thirty-one crore. Around fifty crore from two levers. These are illustrative; the pilot proves them.
-> The plan: a three-month shadow pilot beside today's mapping, a triggered A/B test, then every destination, sightseeing, and a clean feed for API buyers.
+1. 👆 Do nothing for 3 seconds; let the bookings scroll.
+   🎙 "Matching is half the problem; the other half is which supplier to show.
+   Every booking updates live reliability scores: did it confirm, did the price jump, how fast. The bookings here are simulated."
+2. 👆 Click **Sabotage** on the **GlobalBeds** card (second card), or press **Shift+2**. Then **stay quiet for about 15 seconds** while red events appear and the GlobalBeds score falls.
+   🎙 *(after a few seconds)* "Now GlobalBeds starts jumping prices at checkout. Nobody tells LedgerBot; it sees it in the bookings."
+3. 👆 Wait until the hotel cards at the bottom switch supplier and the message appears. The counter top left now shows failed bookings avoided per day.
+   🎙 "It moves about three hundred offers to reliable suppliers on its own. We don't show the cheapest offer; we show the one most likely to book, confirm and earn."
+4. 👆 Click **Heal all** (or press **Shift+0**). **Important:** do this before you leave, or the replay in Scene 10 shows different numbers.
 
----
-
-## 9:05–9:20 · CLOSE [PROTO 00, folded card]
-
-**DO:** press `R`, go to scene 00, press `Space` so the card folds, hold.
-
-> **SAY:** Nine listings. One room. A guarantee on every merge, and a shelf that heals itself.
-> I'm Anshuman, for TravellerTech. This is LedgerBot, and we'd love to build it with TBO.
-
-End on 2 s of silence on the card, then cut to black with the team name and the prototype link.
+👆 Click **Next: Portal & API**.
 
 ---
 
-# Notes
+## Scene 07 · One clean shelf, two channels (6:05–7:00)
 
-## Delivery
-- Confident, not salesy. Short sentences. Pause after every number.
-- Say "measured" and "guaranteed" only for LedgerBot's own numbers. Say **"simulated"** for the bookings, the A/B replay and the LLM-only column, and **"illustrative"** for the crore figures, exactly where the script does. Judges trust teams that label their own assumptions.
-- Don't read slides aloud. The slides carry detail; your voice carries the story.
+**You start on:** "One clean shelf. Two channels." An agent's search page for Dubai Marina: filters on the left, hotel cards on the right.
 
-## Recording tips (solo)
-- Two passes: silent screen capture first, voice-over second, with a USB or lapel mic in a quiet, soft room.
-- Record each scene as its own clip; press `R` between takes of the same scene.
-- Optional picture-in-picture: your hands on the keyboard during the 20-second challenge, or your phone voting in the arena. Skip both if short on time.
-- Music: one quiet instrumental bed at about −24 dB under the voice; drop it out during the 20-second challenge and the sabotage.
-- Cut on actions (the fold, the click, a key press); 6–10 frame cross-dissolves between prototype and deck.
+1. 👆 Do nothing for 2 seconds.
+   🎙 "TBO sells through two channels, the agent portal and the API. Both get the same clean shelf.
+   Here's the agent's view: one card per hotel, one row per real room, one choice per meal plan and cancellation term, best supplier already picked."
+2. 👆 Under **Meal plan**, click **Breakfast**. Then tick **Free cancellation only**.
+   🎙 "Breakfast, free cancellation: two clicks. Behind this screen: 981 supplier rates, 27 real hotels."
+3. 👆 Click **Clean Feed API** (top right toggle) or press **2**. Atlantis The Palm is selected.
+   🎙 "API customers get it as data. Left: what five suppliers send for Atlantis The Palm, with seventeen spellings of the meal plan. Right: our response, with canonical rooms, a confirm probability per offer, and backup suppliers."
+4. 👆 Click **Call live** (above the response) or press **Space**.
+   🎙 "Sixty-five rates in; six rooms and twenty-five offers out, in milliseconds, with no AI call."
+
+👆 Click **Next: The Arena**. (With `?short=1` the optional Ranking scene is skipped. Without it, the button says **Next: Ranking for Agents**; see the optional section at the end.)
+
+---
+
+## Scene 09 · LedgerBot vs an LLM-only pipeline (7:00–7:40)
+
+**You start on:** the **Benchmark** table. The LLM-only column says SIMULATED.
+
+1. 👆 Do nothing for 6–8 seconds; let the table be read.
+   🎙 "Against an LLM-only pipeline: we haven't run a live LLM baseline yet, so that column is simulated, using our stated error assumptions on the same held-out pairs. Our column is measured."
+2. 👆 Point at the rows as you read them.
+   🎙 "Hotel matching accuracy 0.87 versus 0.91. Room-and-offer corner cases 0.70 versus 1.00. Contradictory groups 19 versus zero.
+   The point: our side is measured and guaranteed. An LLM-only design can't offer either."
+
+**Never say** "we ran an LLM-only pipeline", and don't describe a mistake in the examples carousel as something an LLM actually did. Call it "the kind of mistake we assumed".
+
+*Optional, only if you have time: click **Judges vs Machine**, scan the QR with your phone (same Wi-Fi), vote on a few pairs (**Space** pushes the next pair), then click **Learn from your votes**. Say: "At the finale, you can play against it on your phones. Where people disagree, LedgerBot abstains, and one click retrains it on your votes. The review band started at 101 pairs; the new size is on screen."*
+
+👆 Click **Next: Impact & Architecture**.
+
+---
+
+## Scene 10B · The enterprise solution (7:40–8:20)
+
+**You start on:** the Impact replay. You'll do the architecture first.
+
+1. 👆 Click **Architecture** (top right toggle) or press **B**. Then click **Start drawing**.
+   🎙 "At TBO scale there are two paths."
+2. 👆 Click **Next step** once per sentence below (or press **Space**).
+   🎙 "The mapping pipeline runs off the search path: feeds stream in, get normalised, matched on CPU and decided within the error budget; the LLM handles hard cases in the background, and people handle the rest. Everything lands in a versioned hotel, room and offer graph with one-click rollback."
+   🎙 "The search path only reads that graph, for the portal and the API alike: under five milliseconds per search, by design."
+   🎙 "And every booking outcome flows back to retrain. It improves with use."
+3. 👆 Switch to the deck, the system architecture slide, for a few seconds. Then switch to the **Scalable, feasible and cutting-edge** slide.
+   🎙 "Scalable: no all-pairs comparison, and a new feed touches only what it affects. Feasible: open-source, on data TBO already logs, beside today's mapping vendor. And grounded in current research."
+
+👆 Switch back to the app.
+
+---
+
+## Scene 10A · The money (8:20–9:25)
+
+1. 👆 Click **Impact replay** (top right toggle) or press **A**. Click **Replay 50,000 searches** (or press **Space**). The two lanes race for about 12 seconds; start talking while they run.
+   🎙 "In simulation, same agents, same suppliers: 22.5 percent more gross profit per search, failed bookings from 91 to 42, wrong-room incidents from 26 to 6."
+2. 👆 Click the orange **counter** top left. A breakdown opens. Hold 3 seconds.
+   🎙 "And the counter kept score: 5,884 duplicates removed, 421 mapping hours saved at three minutes a record, each figure labelled measured, simulated or assumed."
+   *(If you recorded onboarding earlier in the same session without a Reset, the counter shows bigger numbers. Say what it shows.)*
+3. 👆 Click anywhere to close it. Switch to the deck, the business impact and rollout slide.
+   🎙 "At TBO's scale, thirty-one and a half thousand crore of hotel bookings a year, one percent more look-to-book is about nineteen crore a year, and a tenth of a point of take rate about thirty-one crore. Illustrative; the pilot proves them.
+   The plan: a three-month shadow pilot, a triggered A/B test, then every destination, sightseeing and the API feed."
+
+---
+
+## Scene 00 again · Close (9:25–9:40)
+
+1. 👆 Switch back to the app. Click **Reset**. Open the scene menu in the bottom bar (the button showing the current scene name) and choose **00 Cold Open**. Click **Fold into one card**.
+   🎙 "Nine listings. One room. A guarantee on every merge, one clean shelf for every channel, and a shelf that heals itself.
+   I'm Anshuman, for TravellerTech. This is LedgerBot, and we'd love to build it with TBO."
+2. 👆 Stay silent for 2 seconds, then stop recording. In the edit, end on black with the team name and the prototype link.
+
+---
+
+## Optional · Scene 08 · Same search, two agents (+25 s)
+
+Only include this if you also cut the deck's "Scalable, feasible" slide and the Activities tab in Scene 03, to stay under 10 minutes. It goes between Scene 07 and Scene 09.
+
+1. 👆 On **Ranking for Agents**, click **Relevance only**.
+   🎙 "TBO's users are professionals. Riya in Delhi sells refundable four-star family stays; Mark in the US sells suites on the Palm. Same search, two right answers."
+2. 👆 Click **+ Margin & Platinum**, wait 4 seconds, then click **+ Reliability risk**. The cards reorder.
+   🎙 "TBO can blend in margin, Platinum hotels and supplier reliability, with a guardrail that keeps relevance first."
+
+---
+
+## If the video runs long (cut in this order)
+1. The voting part of Scene 09 (already optional).
+2. The deck's "Scalable, feasible" slide.
+3. Step 6 of Scene 03 (Spanish room name).
+4. Steps 1–2 of Scene 07 (the portal); keep the API.
+5. Step 4 of Scene 03 (Activities).
+
+## Editing tips
+- Cut on actions: the fold, a click, a key press. Use short cross-dissolves (6–10 frames) between the app and the deck.
+- Music: one quiet instrumental track at about −24 dB under your voice; mute it during the 20-second challenge and the sabotage.
 - Burn in subtitles; judges often watch muted first.
-
-## If you need a 6-minute cut
-Drop, in this order: the six-capabilities slide; Scene 07; the voting half of Scene 08; the production slide; the Spanish example in Break It.
+- The bottom bar and edge arrows are visible in the recording. That's fine; you can crop them out in the edit if you prefer.
 
 ## Final checklist
-- [ ] The deck's cover and titles say **LedgerBot** (the prototype does).
-- [ ] Numbers spoken match the screen in this take (especially the Scene 02 time and Scene 06 switched offers).
-- [ ] "Simulated" is said for the LLM-only column, the bookings and the replay; "illustrative" for the crore figures.
-- [ ] The deck's prototype/video link is real (it was a placeholder, `example.com`).
-- [ ] Runtime between 6:00 and 10:00 after editing; subtitles burned in; audio checked on speakers and headphones.
+- [ ] Clicked **Reset** before recording.
+- [ ] Numbers you said match the screen (especially the Scene 02 time, the Scene 04 median time, the Scene 06 switched offers and the counter in the finale).
+- [ ] Clicked **Heal all** in Scene 06 before the replay.
+- [ ] Said "simulated" for the bookings, the replay and the LLM-only column; "illustrative" for the crore figures; "at three minutes a record" with the mapping hours.
+- [ ] The deck's cover and titles say **LedgerBot**; the deck's prototype/video link is real (it was a placeholder, `example.com`).
+- [ ] Final length under 10:00; subtitles burned in; audio checked on speakers and headphones.

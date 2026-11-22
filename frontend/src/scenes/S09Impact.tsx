@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Button, Caption, Card, Chip, Kbd, SceneHeader, T, Ticker, Toggle } from "../design/primitives";
 import { api, post } from "../lib/api";
-import { formatINR, groupIN, RECORD_MODE } from "../lib/format";
+import { formatINR, groupIN } from "../lib/format";
 import { useHotkeys } from "../lib/hooks";
 import { useTopic } from "../lib/ws";
 
@@ -75,7 +75,7 @@ function Replay({ r, running, onRun }: { r: any; running: boolean; onRun: () => 
                   <span className="text-[13px] text-ink-3">= {r.formula}</span>
                 </div>
               )}
-              {!running && !RECORD_MODE && <div className="mt-4"><Button variant="ghost" onClick={onRun} kbd="Space">Run the replay again</Button></div>}
+              {!running && <div className="mt-4"><Button variant="ghost" onClick={onRun} kbd="Space">Run the replay again</Button></div>}
             </motion.div>
           )}
         </AnimatePresence>
@@ -132,9 +132,9 @@ function Architecture({ step, onNext, onAll, onRestart }: { step: number; onNext
       <div className="absolute left-0 bottom-0 flex gap-3 items-center">
         {step >= 9 && <Chip variant="saffron">Added to search path: &lt; 5 ms p95</Chip>}
         {step >= 10 && <Chip variant="lagoon">Shadow mode → triggered A/B (only searches where rankings differ) → ramp</Chip>}
-        {!RECORD_MODE && step < STEPS.length && <Button onClick={onNext} kbd="Space">{step === 0 ? "Start drawing" : "Next step"} ({step}/{STEPS.length})</Button>}
-        {!RECORD_MODE && step < STEPS.length && <Button variant="ghost" onClick={onAll}>Draw all</Button>}
-        {!RECORD_MODE && step > 0 && <Button variant="ghost" onClick={onRestart}>Restart</Button>}
+        {step < STEPS.length && <Button onClick={onNext} kbd="Space">{step === 0 ? "Start drawing" : "Next step"} ({step}/{STEPS.length})</Button>}
+        {step < STEPS.length && <Button variant="ghost" onClick={onAll}>Draw all</Button>}
+        {step > 0 && <Button variant="ghost" onClick={onRestart}>Restart</Button>}
       </div>
     </div>
   );

@@ -85,6 +85,9 @@ DEFAULT_BETA = 0.01  # max share of true matches lost to auto-reject (1% keeps a
 REVIEW_MINUTES_PER_PAIR = 1.5
 REVIEW_COST_INR_PER_HOUR = 450.0
 PAIRS_PER_MONTH = 1_200_000  # illustrative volume for the ops-cost stat
+# ASSUMPTION for the impact ledger: minutes an analyst spends mapping one supplier hotel record by hand
+# (search the master list, compare name/address/geo, confirm). Shown on screen next to the hours figure.
+MANUAL_MAPPING_MIN_PER_RECORD = float(os.getenv("MANUAL_MAPPING_MIN_PER_RECORD", "3"))
 
 # ---------------------------------------------------------------- Ranking
 RANK_WEIGHTS = {"margin": 0.25, "platinum": 0.15, "risk": 0.4}

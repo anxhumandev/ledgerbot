@@ -72,8 +72,6 @@ body {
 .scroll-quiet { scrollbar-width: none; }
 .scroll-quiet::-webkit-scrollbar { display: none; }
 
-.record-mode, .record-mode * { cursor: none !important; }
-.recording [data-tip]:hover::after { display: none !important; }
 
 [data-tip] { position: relative; }
 [data-tip]:hover::after {
