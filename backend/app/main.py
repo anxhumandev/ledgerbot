@@ -1,4 +1,4 @@
-"""LedgerBot FastAPI app: REST under /api, WebSocket at /ws."""
+"""LedgerBot FastAPI app: REST API under /api."""
 from __future__ import annotations
 
 import asyncio
@@ -11,32 +11,37 @@ import warnings  # noqa: E402
 
 warnings.filterwarnings("ignore", message=".*ORJSONResponse is deprecated.*")
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import ORJSONResponse  # noqa: E402
 
 from app.demo import DEMO  # noqa: E402
-from app.pipeline.cost import METER  # noqa: E402
-from app.routers import core, feed, pipeline, sim  # noqa: E402
-from app.ws import HUB  # noqa: E402
+from app import errors, store  # noqa: E402
+from app.routers import core, feed, operations, pipeline, sim, workspace  # noqa: E402
 
 
-async def _cost_pump():
-    last = None
-    while True:
-        await asyncio.sleep(1.0)
-        if not DEMO.ready:
-            continue
-        snap = METER.snapshot()
-        if snap != last:
-            await HUB.broadcast("cost", "snapshot", snap)
-            last = snap
+def _init_workspace():
+    """Open the operational store and bring the in-memory engine in line with it."""
+    from app import audit, identity
+    from app.services import catalog, ingestion, review, settings_svc
+    store.init()
+    identity.seed_users()
+    settings_svc.apply_runtime()
+    if catalog.has_mutations():
+        res = catalog.rebuild()
+        print(f"Replayed catalog changes in {res['applied_in_s']}s; skipped {len(res['skipped'])}")
+    review.sync_cases()
+    ingestion.recover_interrupted()
+    if not store.one("SELECT 1 AS x FROM audit_events LIMIT 1"):
+        audit.record("system", "workspace.initialized", "workspace", "demo",
+                     after={"catalog_built_at": DEMO.state["built_at"], "world": DEMO.state.get("world")})
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
         await asyncio.to_thread(DEMO.load)
+        await asyncio.to_thread(_init_workspace)
         from app.services.simulator import SIM
         SIM.prepare()
         from app.pipeline.blocking import embedder
@@ -45,32 +50,24 @@ async def lifespan(app: FastAPI):
         DEMO.ready = False
         DEMO.error = f"{type(e).__name__}: {e}. Run the data + train steps first."
         traceback.print_exc()
-    pump = asyncio.create_task(_cost_pump())
     try:
         yield
     finally:
-        from app.services.live import ONBOARDER
         from app.services.simulator import REPLAY, SIM
-        jobs = [task for task in (ONBOARDER.task, SIM.task, REPLAY.task, pump) if task]
+        jobs = [task for task in (SIM.task, REPLAY.task) if task]
         for task in jobs:
             task.cancel()
         await asyncio.gather(*jobs, return_exceptions=True)
 
 
 app = FastAPI(title="LedgerBot", default_response_class=ORJSONResponse, lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origin_regex=r"https?://.*", allow_credentials=True,
-                   allow_methods=["*"], allow_headers=["*"])
-for r in (core.router, pipeline.router, sim.router, feed.router):
+from app import config  # noqa: E402
+
+app.add_middleware(CORSMiddleware, allow_origins=config.ALLOWED_ORIGINS, allow_credentials=False,
+                   allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+                   allow_headers=["Content-Type", "X-LedgerBot-User", "Idempotency-Key", "X-Request-ID"],
+                   expose_headers=["X-Request-ID"])
+errors.install(app)
+for r in (core.router, pipeline.router, sim.router, feed.router, workspace.router, operations.router):
     app.include_router(r, prefix="/api")
 
-
-@app.websocket("/ws")
-async def ws_endpoint(ws: WebSocket):
-    await HUB.connect(ws)
-    try:
-        while True:
-            await ws.receive_text()  # clients may ping; nothing else expected
-    except WebSocketDisconnect:
-        HUB.disconnect(ws)
-    except Exception:
-        HUB.disconnect(ws)

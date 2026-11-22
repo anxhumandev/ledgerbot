@@ -103,6 +103,21 @@ PUBLIC_HOST = os.getenv("PUBLIC_HOST", "")
 FRONTEND_PORT = int(os.getenv("FRONTEND_PORT", "5174"))
 
 
+# ---------------------------------------------------------------- Enterprise workspace
+# Operational state (review decisions, catalog changes, ingestion jobs, audit log, settings) lives in SQLite.
+DB_PATH = Path(os.getenv("LEDGERBOT_DB", str(DATA_DIR / "ledgerbot.sqlite3")))
+# CORS: comma-separated allowed origins. Defaults cover local development only.
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv(
+    "ALLOWED_ORIGINS", f"http://localhost:{FRONTEND_PORT},http://127.0.0.1:{FRONTEND_PORT}").split(",") if o.strip()]
+MAX_UPLOAD_BYTES = int(float(os.getenv("MAX_UPLOAD_MB", "5")) * 1024 * 1024)
+# Offer selection guardrail: a supplier offer may only be recommended if its price is within this
+# percentage of the cheapest comparable offer (same room, board and refundability). Editable in Settings.
+DEFAULT_PRICE_CAP_PCT = float(os.getenv("PRICE_CAP_PCT", "5"))
+WORKSPACE_NAME = os.getenv("WORKSPACE_NAME", "Demo Workspace")
+COUNTRY_OF_CITY = {"dubai": "United Arab Emirates", "abu_dhabi": "United Arab Emirates", "singapore": "Singapore",
+                   "bangkok": "Thailand", "bali": "Indonesia"}
+
+
 def ensure_dirs() -> None:
     for d in (WORLD_DIR, CACHE_DIR, IMG_BASE_DIR, IMG_VAR_DIR):
         d.mkdir(parents=True, exist_ok=True)

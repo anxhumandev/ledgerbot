@@ -1,22 +1,13 @@
-"""Analyst tooling: the human review queue (active learning) and hotel search.
-
-Review queue: the record pairs LedgerBot refused to decide automatically (the uncertain band between the certified
-reject and accept thresholds), ordered most-uncertain first so each human decision teaches the model the most.
-Every decision is kept as a gold label for the next calibration and retraining run.
-
-Search: find any golden record by its canonical name or by any supplier's spelling of it.
-"""
+"""Analyst helpers: the current review band (record pairs between the certified reject and accept thresholds,
+most uncertain first; persisted as cases by services/review.py), field diffs for a pair, and fuzzy search over every
+supplier's spelling of a property."""
 from __future__ import annotations
-
-import time
-from statistics import median
 
 import numpy as np
 from rapidfuzz import fuzz, process
 
 from app.demo import DEMO
 from app.pipeline.features import haversine_m
-from app.services.views import explain_records, record_view
 
 _CACHE: dict = {}
 
@@ -50,47 +41,6 @@ def _diffs(a: dict, b: dict) -> list[dict]:
         rows.append({"field": "Location", "a": f"{a['lat']:.4f}, {a['lng']:.4f}", "b": f"{b['lat']:.4f}, {b['lng']:.4f}",
                      "state": "same" if d <= 150 else "different", "note": f"{d:,.0f} m apart"})
     return rows
-
-
-def queue(limit: int = 40) -> dict:
-    pairs = _queue_pairs()
-    log = DEMO.review_log
-    items = []
-    for a, b, p in pairs:
-        pid = f"{a}|{b}"
-        if pid in log or len(items) >= limit:
-            continue
-        ex = explain_records(a, b)
-        A, B = record_view(a), record_view(b)
-        lean = "same" if p >= 0.5 else "different"
-        items.append({"pair_id": pid, "a": A, "b": B, "p": p, "lean": lean, "explain": ex, "diffs": _diffs(A, B),
-                      "hotel_a": DEMO.hotels.get(DEMO.record_cluster.get(a), {}).get("name"),
-                      "hotel_b": DEMO.hotels.get(DEMO.record_cluster.get(b), {}).get("name")})
-    return {"items": items, "stats": stats(), "tau_accept": DEMO.current_risk.get("tau_accept"),
-            "tau_reject": DEMO.current_risk.get("tau_reject"), "alpha": DEMO.alpha}
-
-
-def decide(pair_id: str, verdict: str, seconds: float | None = None) -> dict:
-    if verdict not in ("same", "different", "skip"):
-        raise ValueError("verdict must be same, different or skip")
-    DEMO.review_log[pair_id] = {"verdict": verdict, "seconds": seconds, "at": time.time()}
-    return stats()
-
-
-def undo(pair_id: str) -> dict:
-    DEMO.review_log.pop(pair_id, None)
-    return stats()
-
-
-def stats() -> dict:
-    log = DEMO.review_log
-    total = len(_queue_pairs())
-    decided = [v for v in log.values() if v["verdict"] != "skip"]
-    secs = [v["seconds"] for v in decided if v.get("seconds")]
-    return {"total": total, "reviewed": len(decided), "skipped": sum(v["verdict"] == "skip" for v in log.values()),
-            "remaining": max(0, total - len(log)), "same": sum(v["verdict"] == "same" for v in decided),
-            "different": sum(v["verdict"] == "different" for v in decided),
-            "median_seconds": round(median(secs), 1) if secs else None}
 
 
 # ---------------------------------------------------------------- search

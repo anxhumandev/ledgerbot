@@ -1,4 +1,4 @@
-.PHONY: setup data train baseline baseline-sim dev reset teach test
+.PHONY: setup data train baseline baseline-sim dev teach test e2e
 
 PYTHON_BOOTSTRAP ?= python3
 PYTHON := $(abspath $(if $(wildcard .venv/Scripts/python.exe),.venv/Scripts/python.exe,.venv/bin/python))
@@ -24,12 +24,12 @@ baseline-sim:
 dev:
 	"$(PYTHON)" dev.py
 
-reset:
-	curl -fsS -X POST http://localhost:$(PORT_BACK)/api/demo/reset
-
 teach:
 	cd backend && "$(PYTHON)" -m app.pipeline.normalize teach
 
 test:
 	cd backend && "$(PYTHON)" -m pytest -q
-	cd frontend && npm run build
+	cd frontend && npm test && npm run build
+
+e2e:  # needs the app running (make dev)
+	cd frontend && npm run test:e2e

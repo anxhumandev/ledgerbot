@@ -1,126 +1,71 @@
-import { AnimatePresence, motion } from "framer-motion";
-import { Component, lazy, type ReactNode, Suspense, useEffect, useRef, useState } from "react";
-import { EdgeArrows, Footer, PresenterOverlay, Rail, TopBar } from "../components/Chrome";
-import { ResearchPanel, SearchPalette } from "../components/Overlays";
-import { Skeleton, Stage, T, ToastHost } from "../design/primitives";
-import { api, post } from "../lib/api";
-import { typing } from "../lib/hooks";
-import { resetDemo } from "../lib/demo";
-import { connectWS } from "../lib/ws";
-import { type SceneKey, SCENES, useApp } from "./store";
+import { lazy, Suspense } from "react";
+import { createBrowserRouter, Navigate, RouterProvider, useParams, useRouteError } from "react-router-dom";
+import AppShell, { PageFallback } from "../layouts/AppShell";
+import { ErrorState } from "../ui/core";
 
-const SCENE_COMPONENTS: Record<SceneKey, ReturnType<typeof lazy>> = {
-  cold: lazy(() => import("../scenes/S00ColdOpen")),
-  mess: lazy(() => import("../scenes/S01Mess")),
-  onboard: lazy(() => import("../scenes/S02Onboarding")),
-  inspect: lazy(() => import("../scenes/S03Inspector")),
-  review: lazy(() => import("../scenes/SReview")),
-  dial: lazy(() => import("../scenes/S05Dial")),
-  health: lazy(() => import("../scenes/S06Suppliers")),
-  shelf: lazy(() => import("../scenes/SShelf")),
-  rank: lazy(() => import("../scenes/S07Ranking")),
-  arena: lazy(() => import("../scenes/S08Arena")),
-  impact: lazy(() => import("../scenes/S09Impact")),
-};
-const VotePage = lazy(() => import("../scenes/VotePage"));
+const page = (load: () => Promise<{ default: React.ComponentType<any> }>) => lazy(load);
+const Overview = page(() => import("../pages/OverviewPage"));
+const Inventory = page(() => import("../pages/InventoryPage"));
+const InventoryDetail = page(() => import("../pages/InventoryDetailPage"));
+const MatchReview = page(() => import("../pages/MatchReviewPage"));
+const Clusters = page(() => import("../pages/ClustersPage"));
+const Policies = page(() => import("../pages/PoliciesPage"));
+const Suppliers = page(() => import("../pages/SuppliersPage"));
+const SupplierDetail = page(() => import("../pages/SupplierDetailPage"));
+const Ingestion = page(() => import("../pages/IngestionPage"));
+const Offers = page(() => import("../pages/OfferComparisonPage"));
+const Optimization = page(() => import("../pages/OfferOptimizationPage"));
+const RankingPreview = page(() => import("../pages/RankingPreviewPage"));
+const Experiments = page(() => import("../pages/RankingExperimentsPage"));
+const Analytics = page(() => import("../pages/AnalyticsPage"));
+const Audit = page(() => import("../pages/AuditPage"));
+const SettingsPage = page(() => import("../pages/SettingsPage"));
 
-// read once at module load so StrictMode double effects cannot swallow the first-visit hint
-const SHOW_HINT = (() => {
-  try {
-    const seen = localStorage.getItem("tessera.hinted") === "1";
-    localStorage.setItem("tessera.hinted", "1");
-    return !seen;
-  } catch {
-    return true;
-  }
-})();
-
-class SceneBoundary extends Component<{ children: ReactNode }, { error: boolean }> {
-  state = { error: false };
-
-  static getDerivedStateFromError() { return { error: true }; }
-
-  render() {
-    if (!this.state.error) return this.props.children;
-    return <div role="alert" className="h-full flex flex-col items-center justify-center gap-4">
-      <h1 className="font-serif text-[44px]">This scene could not load.</h1>
-      <button className="rounded-full bg-lagoon text-white px-5 py-2" onClick={() => useApp.getState().bumpEpoch()}>Retry scene</button>
-    </div>;
-  }
+function RouteError() {
+  const e = useRouteError();
+  return <div className="p-8"><ErrorState error={e} onRetry={() => window.location.reload()} /></div>;
 }
 
-function StageApp() {
-  const { scene, epoch, presenter, toast } = useApp();
-  const [health, setHealth] = useState<any>(null);
-  useEffect(() => {
-    connectWS();
-    const poll = () => api("/health").then((h) => { setHealth(h); useApp.setState({ llm: h.llm }); }).catch(() => setHealth(null));
-    poll();
-    api("/cost").then((c) => useApp.setState({ cost: c })).catch(() => undefined);
-    const id = setInterval(poll, 5000);
-    const onHash = () => {
-      const m = window.location.hash.match(/#(\d+)/);
-      if (m && parseInt(m[1], 10) !== useApp.getState().scene) useApp.getState().setScene(parseInt(m[1], 10));
-    };
-    window.addEventListener("hashchange", onHash);
-    // one-time hint for first-time viewers
-    const hint = SHOW_HINT ? setTimeout(() => useApp.getState().showToast("Press → for the next scene, P for this scene's keys, or use the controls bottom-right"), 2500) : undefined;
-    return () => { clearInterval(id); clearTimeout(hint); window.removeEventListener("hashchange", onHash); };
-  }, []);
-  useEffect(() => {
-    const on = async (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); useApp.getState().setSearch(true); return; }
-      if (e.key === "Escape") { useApp.getState().setSearch(false); if (useApp.getState().research) useApp.getState().toggleResearch(); }
-      if (typing() || e.metaKey || e.ctrlKey || e.altKey || useApp.getState().searchOpen) return;
-      if (e.key === "/") { e.preventDefault(); useApp.getState().setSearch(true); return; }
-      if (e.key === "i" || e.key === "I") { useApp.getState().toggleResearch(); return; }
-      if (e.key === "ArrowRight" && !e.shiftKey) useApp.getState().next();
-      else if (e.key === "ArrowLeft" && !e.shiftKey) useApp.getState().prev();
-      else if (e.key === "p" || e.key === "P") useApp.getState().togglePresenter();
-      else if ((e.key === "r" || e.key === "R") && !e.repeat) await resetDemo();
-    };
-    window.addEventListener("keydown", on);
-    return () => window.removeEventListener("keydown", on);
-  }, []);
-  const Scene = SCENE_COMPONENTS[SCENES[scene].key];
-  return (
-    <Stage>
-      <TopBar />
-      {presenter && <Rail />}
-      <div className="absolute left-0 right-0 top-14 bottom-7 px-16 pt-10 pb-4 z-10">
-        {!health?.ok ? (
-          <div className="h-full flex flex-col items-center justify-center gap-4 text-ink-2">
-            <div className="font-serif text-[44px] text-ink">Warming up the pipeline…</div>
-            <div className="text-[17px] max-w-[760px] text-center">{health?.error ?? "Waiting for the backend at /api (make dev)."}</div>
-            <Skeleton className="w-[520px] h-3 mt-4" />
-          </div>
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.div key={`${scene}-${epoch}`} className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={T}>
-              <Suspense fallback={<Skeleton className="w-full h-full" />}>
-                <SceneBoundary><Scene /></SceneBoundary>
-              </Suspense>
-            </motion.div>
-          </AnimatePresence>
-        )}
-      </div>
-      <EdgeArrows />
-      <Footer />
-      <PresenterOverlay />
-      <ResearchPanel />
-      <SearchPalette />
-      <ToastHost toast={toast} />
-    </Stage>
-  );
+function NotFound() {
+  return <ErrorState error={{ code: "not_found", message: "This page does not exist. Use the navigation or Ctrl K to find what you need." }} />;
 }
+
+function InventoryKind() {
+  const { kind } = useParams();
+  if (kind !== "hotels" && kind !== "sightseeing") return <NotFound />;
+  return <Inventory key={kind} kind={kind === "hotels" ? "hotel" : "activity"} />;
+}
+
+const router = createBrowserRouter([
+  {
+    path: "/", element: <AppShell />, errorElement: <RouteError />, children: [
+      { index: true, element: <Navigate to="/overview" replace /> },
+      { path: "overview", element: <Overview /> },
+      { path: "inventory", element: <Navigate to="/inventory/hotels" replace /> },
+      { path: "inventory/:kind", element: <InventoryKind /> },
+      { path: "inventory/:type/:id", element: <InventoryDetail /> },
+      { path: "matching", element: <Navigate to="/matching/review" replace /> },
+      { path: "matching/review", element: <MatchReview /> },
+      { path: "matching/clusters", element: <Clusters /> },
+      { path: "matching/policies", element: <Policies /> },
+      { path: "suppliers", element: <Navigate to="/suppliers/directory" replace /> },
+      { path: "suppliers/directory", element: <Suppliers /> },
+      { path: "suppliers/ingestion", element: <Ingestion /> },
+      { path: "suppliers/:id", element: <SupplierDetail /> },
+      { path: "offers", element: <Navigate to="/offers/comparison" replace /> },
+      { path: "offers/comparison", element: <Offers /> },
+      { path: "offers/optimization", element: <Optimization /> },
+      { path: "ranking", element: <Navigate to="/ranking/preview" replace /> },
+      { path: "ranking/preview", element: <RankingPreview /> },
+      { path: "ranking/experiments", element: <Experiments /> },
+      { path: "analytics", element: <Analytics /> },
+      { path: "audit", element: <Audit /> },
+      { path: "settings", element: <SettingsPage /> },
+      { path: "*", element: <NotFound /> },
+    ],
+  },
+]);
 
 export default function App() {
-  if (window.location.pathname.startsWith("/vote")) {
-    return (
-      <Suspense fallback={null}>
-        <VotePage />
-      </Suspense>
-    );
-  }
-  return <StageApp />;
+  return <Suspense fallback={<PageFallback />}><RouterProvider router={router} /></Suspense>;
 }

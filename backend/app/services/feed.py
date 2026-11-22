@@ -4,13 +4,9 @@ TBO sells through two channels: agents on the B2B portal and API customers. Both
 de-duplicated shelf. `hotel_offers` is that shelf as an API response: one hotel, its physical rooms, and per room
 one offer per commercial slot (board x refundability), with ranked fallbacks if the chosen supplier fails at booking.
 
-`supplier_payloads` shows the same hotel as each supplier delivers it. The field layouts are illustrative of the
-formats bed banks and wholesalers use (caps codes, Spanish keys, terse keys); every value comes from the synthetic
-supplier feed unchanged.
 """
 from __future__ import annotations
 
-import json
 import time
 
 from app import config
@@ -27,8 +23,18 @@ def _hotel(tid: str) -> dict:
     return h
 
 
-def _slot_offer(slot: dict, nights: int, strategy: str) -> dict:
-    sel = off.select(slot["offers"], DEMO.p_success, strategy)
+def _slot_offer(slot: dict, nights: int, strategy: str) -> dict | None:
+    from app.services import offers_svc
+    if strategy == "cheapest":
+        sel = off.select(slot["offers"], DEMO.p_success, strategy)
+        ranked = sel["ranked"]
+    else:  # same rules as the portal: comparable group, paused suppliers excluded, competitiveness cap
+        sel = offers_svc.select(slot["offers"])
+        if not sel["winner"]:
+            return None
+        sel["why"] = "; ".join(sel["reasons"])
+        ranked = [o for o in sel["rows"] if o["eligible"]]
+        sel["ranked"] = ranked
     w = sel["winner"]
     hrs = w.get("cancel_hours")
     return {
@@ -65,7 +71,7 @@ def hotel_offers(tid: str, nights: int = 3, strategy: str = "expected_value") ->
                          "max_occupancy": ident.get("occupancy"), "accessible": bool(ident.get("accessible"))},
             "match_tier": g["tier"].lower(),
             "supplier_room_names": len(g["members"]),
-            "offers": [_slot_offer(s, nights, strategy) for s in slots],
+            "offers": [o for o in (_slot_offer(s, nights, strategy) for s in slots) if o],
         })
     rooms.sort(key=lambda r: min(o["price"]["amount"] for o in r["offers"]))
     members = [m for m in h["members"] if m in DEMO.rec_by_id]
@@ -111,77 +117,3 @@ def search(area: str = "marina", nights: int = 3) -> dict:
     return {"results": out, "meta": {"api_version": API_VERSION, "area": nbs[0], "nights": nights,
                                      "source_supplier_records": n_records, "source_supplier_rates": n_rates,
                                      "server_ms": round((time.perf_counter() - t0) * 1000, 2)}}
-
-
-# ---------------------------------------------------------------- what suppliers send
-def _rates_by_record(h: dict) -> dict:
-    by = {}
-    for g in h.get("rooms") or []:
-        for s in g["slots"]:
-            for o in s["offers"]:
-                by.setdefault(o["record_id"], []).append(o)
-    for rs in by.values():
-        rs.sort(key=lambda o: o["offer_id"])
-    return by
-
-
-def _shape(code: str, r: dict, rates: list[dict], nights: int) -> dict:
-    """One supplier's payload in its own field vocabulary. Values are the raw feed values."""
-    p = lambda o: int(o["price"] * nights)  # noqa: E731
-    if code == "S1":
-        return {"hotelCode": r["record_id"], "hotelName": r["name"], "address": r.get("address"), "phone": r.get("phone"),
-                "geo": {"lat": r.get("lat"), "lng": r.get("lng")}, "starRating": r.get("stars"),
-                "rates": [{"roomName": o["room_name"], "board": o["board_raw"], "cancellation": o["cancellation_raw"],
-                           "price": {"amount": p(o), "currency": "INR"}, "rateKey": o["rate_code"]} for o in rates]}
-    if code == "S2":
-        return {"HTL_ID": r["record_id"], "HTL_NAME": r["name"], "ADDR": r.get("address"), "TEL": r.get("phone"),
-                "LAT": r.get("lat"), "LON": r.get("lng"), "CAT": f"{r.get('stars')}*" if r.get("stars") else None,
-                "RATES": [{"RM": o["room_name"], "BRD": o["board_raw"], "CXL": o["cancellation_raw"], "AMT": p(o),
-                           "CUR": "INR", "RATE_KEY": o["rate_code"]} for o in rates]}
-    if code == "S3":
-        return {"codigo": r["record_id"], "nombre": r["name"], "direccion": r.get("address"), "telefono": r.get("phone"),
-                "coordenadas": f"{r.get('lat')},{r.get('lng')}", "categoria": r.get("stars"),
-                "tarifas": [{"habitacion": o["room_name"], "regimen": o["board_raw"], "cancelacion": o["cancellation_raw"],
-                             "precio": p(o), "moneda": "INR", "clave": o["rate_code"]} for o in rates]}
-    if code == "S4":
-        return {"property": {"id": r["record_id"], "marketingName": r["name"], "rating": r.get("stars"),
-                             "location": {"address": r.get("address"), "latitude": r.get("lat"), "longitude": r.get("lng")},
-                             "contact": r.get("phone")},
-                "offers": [{"roomDescription": o["room_name"], "inclusions": o["board_raw"], "policy": o["cancellation_raw"],
-                            "total": p(o), "code": o["rate_code"]} for o in rates]}
-    if code == "S5":
-        return {"id": r["record_id"], "n": r["name"], "a": r.get("address"), "ph": r.get("phone"), "lt": r.get("lat"),
-                "lg": r.get("lng"), "s": r.get("stars"),
-                "r": [{"rn": o["room_name"], "b": o["board_raw"], "c": o["cancellation_raw"], "p": p(o), "k": o["rate_code"]}
-                      for o in rates]}
-    return {"hotel_id": r["record_id"], "hotel_name": r["name"], "address": r.get("address"), "phone": r.get("phone"),
-            "lat": r.get("lat"), "lng": r.get("lng"), "stars": r.get("stars"),
-            "rates": [{"room": o["room_name"], "meal_plan": o["board_raw"], "cancel_policy": o["cancellation_raw"],
-                       "price_inr": p(o), "rate_id": o["rate_code"]} for o in rates]}
-
-
-def supplier_payloads(tid: str, nights: int = 3) -> dict:
-    h = _hotel(tid)
-    by = _rates_by_record(h)
-    out = []
-    vocab_board, vocab_cxl = set(), set()
-    for m in h["members"]:
-        r = DEMO.rec_by_id.get(m)
-        if r is None:
-            continue
-        rates = by.get(m, [])
-        vocab_board |= {o["board_raw"] for o in rates}
-        vocab_cxl |= {o["cancellation_raw"] for o in rates}
-        payload = _shape(r["supplier"], r, rates, nights)
-        out.append({"supplier": r["supplier"], "supplier_name": config.SUPPLIERS[r["supplier"]]["name"],
-                    "n_rates": len(rates), "bytes": len(json.dumps(payload, ensure_ascii=False).encode()),
-                    "payload": payload})
-    out.sort(key=lambda x: x["supplier"])
-    clean = hotel_offers(tid, nights)
-    return {"tessera_id": tid, "name": h["name"], "suppliers": out,
-            "stats": {"payloads": len(out), "rates": sum(x["n_rates"] for x in out),
-                      "board_vocabulary": len(vocab_board), "cancellation_vocabulary": len(vocab_cxl),
-                      "raw_bytes": sum(x["bytes"] for x in out),
-                      "clean_bytes": len(json.dumps(clean, ensure_ascii=False).encode()),
-                      "clean_rooms": len(clean["rooms"]),
-                      "clean_offers": sum(len(r["offers"]) for r in clean["rooms"])}}

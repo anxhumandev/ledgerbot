@@ -168,12 +168,20 @@ def listings(area: str = "marina", strategy: str = "cheapest", nights: int = 3, 
 
 
 # ---------------------------------------------------------------- explain
+def record_vector(rid: str):
+    """Name embedding of a record: from the build index, or computed at ingestion time for imported records."""
+    row = DEMO.row.get(rid)
+    if row is not None:
+        return DEMO.state["emb"][row]
+    return getattr(DEMO, "extra_emb", {}).get(rid)
+
+
 def explain_records(a: str, b: str) -> dict:
     n = DEMO.norm_by_id
     st = DEMO.state
-    emb, row = st["emb"], DEMO.row
-    ia, ib = row[a], row[b]
-    x = np.array(pair_features(n[a], n[b], float(emb[ia] @ emb[ib]), st["index"].hashes.get(a), st["index"].hashes.get(b)),
+    va, vb = record_vector(a), record_vector(b)
+    cos = float(va @ vb) if va is not None and vb is not None else 0.0
+    x = np.array(pair_features(n[a], n[b], cos, st["index"].hashes.get(a), st["index"].hashes.get(b)),
                  dtype=np.float32).reshape(1, -1)
     raw = float(DEMO.matcher.raw(x)[0])
     p = float(DEMO.matcher.calibrate(np.array([raw]))[0])

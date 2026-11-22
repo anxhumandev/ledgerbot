@@ -1,42 +1,48 @@
-import { useEffect, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { api } from "./api";
-import { useApp } from "../app/store";
 
 const typing = () => {
   const el = document.activeElement as HTMLElement | null;
   return !!el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "TEXTAREA" || el.isContentEditable);
 };
 
-/** Scene-level hotkeys. Keys are KeyboardEvent.key values; "Shift+1" style combos supported. */
-export function useHotkeys(map: Record<string, (e: KeyboardEvent) => void>) {
-  const ref = useRef(map);
-  ref.current = map;
-  useEffect(() => {
-    const on = (e: KeyboardEvent) => {
-      if (typing() || e.metaKey || e.ctrlKey || e.altKey) return;
-      const key = e.shiftKey && /^Digit\d$/.test(e.code) ? `Shift+${e.code.slice(5)}` : e.key;
-      const fn = ref.current[key] ?? ref.current[key.toLowerCase()];
-      if (fn) {
-        e.preventDefault();
-        fn(e);
-      }
-    };
-    window.addEventListener("keydown", on);
-    return () => window.removeEventListener("keydown", on);
-  }, []);
-}
-
-/** Fetch JSON once per demo epoch (re-fetches after a reset). */
-export function useFetch<T = any>(path: string | null, deps: unknown[] = []) {
-  const epoch = useApp((s) => s.epoch);
-  const query = useQuery<T>({
-    queryKey: ["scene", epoch, path, ...deps],
+/** Enterprise data hook: GET `path` (null disables). Keyed by path so URL state drives refetches. */
+export function useApi<T = any>(path: string | null, opts: Partial<UseQueryOptions<T>> = {}) {
+  return useQuery<T>({
+    queryKey: [path],
     enabled: Boolean(path),
     queryFn: ({ signal }) => api<T>(path!, { signal }),
-    throwOnError: true,
+    placeholderData: (prev) => prev,
+    ...opts,
   });
-  return { data: query.data ?? null, error: query.error };
+}
+
+export function useDebounced<T>(value: T, ms = 250): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return v;
+}
+
+/** URL-backed state for filters, sort and paging, so views are shareable and survive refresh. */
+export function useUrlState<T extends Record<string, string>>(defaults: T) {
+  const [params, setParams] = useSearchParams();
+  const state = Object.fromEntries(Object.entries(defaults).map(([k, d]) => [k, params.get(k) ?? d])) as T;
+  const set = (patch: Partial<T>, resetPage = true) => {
+    const next = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === undefined || v === "" || v === defaults[k]) next.delete(k);
+      else next.set(k, String(v));
+    }
+    if (resetPage && !("page" in patch)) next.delete("page");
+    setParams(next, { replace: true });
+  };
+  const reset = () => setParams(new URLSearchParams(), { replace: true });
+  return [state, set, reset] as const;
 }
 
 export { typing };

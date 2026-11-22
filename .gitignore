@@ -16,3 +16,7 @@ frontend/public/img/base/
 .pytest_cache/
 *.log
 *.tsbuildinfo
+backend/data/*.sqlite3
+backend/data/*.sqlite3-*
+frontend/test-results/
+frontend/playwright-report/

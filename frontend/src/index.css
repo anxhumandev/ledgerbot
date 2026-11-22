@@ -2,80 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
-/* TBO-aligned tokens (travelboutiqueonline.com): primary blue #014C8E, accent orange #F2A602, white surfaces,
-   cool light greys, dark text, muted blue-grey captions. Token names are kept from the original design system so
-   every component re-themes from here. All text shades meet WCAG AA on --paper and --surface. */
+/* ============================================================================================================
+   DESIGN TOKENS: TBO brand, read from tbo.com's own CSS (--mainclr #307FE2, --altclr #F36B21,
+   --grayclr #808285, dark text #424551, borders #E5E8ED) and its Montserrat typeface. Every component colours
+   itself through these variables (Tailwind: brand, accent, canvas, panel, edge, fg, ok, warn, bad, info, sim);
+   charts read them at runtime through lib/tokens.ts.
+   TBO's grey #808285 is too light for small text on white (3.9:1), so secondary text uses #63666B (AA).
+   ============================================================================================================ */
 :root {
-  --paper: #F3F5F8;        /* app background: cool light grey */
-  --surface: #FFFFFF;      /* cards */
-  --surface-2: #EEF1F5;    /* wells, table stripes */
-  --line: #D9DFE7;         /* hairlines */
-  --ink: #1B2533;          /* primary text */
-  --ink-2: #3F4B5E;        /* secondary text */
-  --ink-3: #5C6B82;        /* captions (TBO blue-grey, darkened for AA) */
-  --lagoon: #014C8E;       /* PRIMARY: TBO blue. Our system, links, focus */
-  --lagoon-soft: #E2EDF8;
-  --navy: #013A6D;         /* top bar */
-  --saffron: #F2A602;      /* ACCENT: TBO orange. Money, best offer, primary call to action */
-  --saffron-soft: #FEF2D6;
-  --saffron-ink: #8A5800;
-  --sage: #1E8E4E;         /* success, auto-merged, guarantee held */
-  --sage-soft: #E2F4E9;
-  --sage-ink: #146B3A;
-  --clay: #D0392B;         /* errors, failures, sabotage */
-  --clay-soft: #FBE5E2;
-  --clay-ink: #A32A1F;
-  --amber: #C99700;        /* needs human review (yellow, kept distinct from the orange accent) */
-  --amber-soft: #FFF6CC;
-  --amber-ink: #6E5300;
-  --iris: #6B3FD4;         /* anything the LLM touched */
-  --iris-soft: #EEE8FC;
-  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --brand: #307FE2;        /* TBO blue: navigation, links, focus, primary actions */
+  --brand-hover: #1F6ACB;
+  --brand-ink: #1A5BAF;    /* blue text on white / soft backgrounds (AA) */
+  --brand-soft: #EAF2FD;
+  --accent: #F36B21;       /* TBO orange: commercial emphasis, recommended offer, key call to action */
+  --accent-hover: #DC5A12;
+  --accent-ink: #B4480C;   /* orange text on white (AA) */
+  --accent-soft: #FEF0E7;
+  --canvas: #F5F7FA;       /* app background */
+  --panel: #FFFFFF;        /* cards, tables, sidebar */
+  --panel-2: #F7F8FA;      /* table headers, wells */
+  --panel-3: #EEF1F5;
+  --edge: #E5E8ED;         /* TBO border */
+  --edge-strong: #D2D7DF;
+  --fg: #1F2330;           /* headings, primary text */
+  --fg-2: #424551;         /* TBO body text */
+  --fg-3: #63666B;         /* secondary text (TBO grey, darkened for AA) */
+  --ok: #12805C;  --ok-soft: #E6F4EE;
+  --warn: #A35C00; --warn-soft: #FFF3E0;
+  --bad: #C0362C; --bad-soft: #FCEAE8;
+  --info: #307FE2; --info-soft: #EAF2FD;
+  --sim: #6941C6; --sim-soft: #F1ECFB;   /* anything simulated */
+  --focus: 0 0 0 3px rgba(48, 127, 226, 0.35);
 }
 
 html, body, #root { height: 100%; }
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: "Inter Variable", system-ui, sans-serif;
-  font-size: 16px;
+  background: var(--canvas);
+  color: var(--fg-2);
+  font-family: "Montserrat Variable", Montserrat, system-ui, sans-serif;
+  font-size: 14px;
   line-height: 1.45;
-  font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
-.tabular { font-variant-numeric: tabular-nums lining-nums; }
-.font-serif { font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: lining-nums; }
-.font-mono { font-variant-numeric: tabular-nums; }
 
-/* subtle paper grain */
-.grain::before {
-  content: "";
-  position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  opacity: 0.03;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-}
-.dotgrid {
-  background-image: radial-gradient(var(--line) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
-.shimmer {
-  background: linear-gradient(90deg, var(--surface-2) 0%, #f7f3ec 50%, var(--surface-2) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
-}
-@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }
-@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(201,154,26,.45) } 100% { box-shadow: 0 0 0 10px rgba(201,154,26,0) } }
-.pulse-amber { animation: pulse-ring 1.4s var(--ease) infinite; }
-
-.scroll-quiet { scrollbar-width: none; }
-.scroll-quiet::-webkit-scrollbar { display: none; }
-
-
-[data-tip] { position: relative; }
-[data-tip]:hover::after {
-  content: attr(data-tip);
-  position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%);
-  background: var(--ink); color: var(--paper); font-size: 12px; padding: 4px 8px; border-radius: 6px; white-space: nowrap; z-index: 50;
+.num, .font-mono { font-variant-numeric: tabular-nums lining-nums; }
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 6px; }
+.scroll-thin { scrollbar-width: thin; scrollbar-color: var(--edge-strong) transparent; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

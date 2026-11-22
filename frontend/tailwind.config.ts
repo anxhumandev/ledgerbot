@@ -7,21 +7,29 @@ export default {
   theme: {
     extend: {
       colors: {
-        paper: v("paper"), surface: v("surface"), "surface-2": v("surface-2"), line: v("line"),
-        ink: v("ink"), "ink-2": v("ink-2"), "ink-3": v("ink-3"),
-        lagoon: v("lagoon"), "lagoon-soft": v("lagoon-soft"), saffron: v("saffron"), "saffron-soft": v("saffron-soft"),
-        sage: v("sage"), "sage-soft": v("sage-soft"), clay: v("clay"), "clay-soft": v("clay-soft"),
-        amber: v("amber"), "amber-soft": v("amber-soft"), iris: v("iris"), "iris-soft": v("iris-soft"),
-        navy: v("navy"),
-        s1: "#014C8E", s2: "#8A6D3B", s3: "#A23B72", s4: "#2F7F86", s5: "#6B7A2E", s6: "#E8590C",
+        // Enterprise design tokens (TBO brand, see src/index.css). Components use only these.
+        brand: { DEFAULT: v("brand"), hover: v("brand-hover"), soft: v("brand-soft"), ink: v("brand-ink") },
+        accent: { DEFAULT: v("accent"), hover: v("accent-hover"), soft: v("accent-soft"), ink: v("accent-ink") },
+        canvas: v("canvas"),
+        panel: { DEFAULT: v("panel"), 2: v("panel-2"), 3: v("panel-3") },
+        edge: { DEFAULT: v("edge"), strong: v("edge-strong") },
+        fg: { DEFAULT: v("fg"), 2: v("fg-2"), 3: v("fg-3") },
+        ok: { DEFAULT: v("ok"), soft: v("ok-soft") },
+        warn: { DEFAULT: v("warn"), soft: v("warn-soft") },
+        bad: { DEFAULT: v("bad"), soft: v("bad-soft") },
+        info: { DEFAULT: v("info"), soft: v("info-soft") },
+        sim: { DEFAULT: v("sim"), soft: v("sim-soft") },
       },
       fontFamily: {
-        serif: ['"Raleway Variable"', "Arial", "sans-serif"], // display: TBO's brand face
-        sans: ['"Inter Variable"', "system-ui", "sans-serif"], // body and data: built for screen legibility
+        sans: ['"Montserrat Variable"', "Montserrat", "system-ui", "sans-serif"],
         mono: ['"Geist Mono Variable"', "ui-monospace", "monospace"],
       },
-      borderRadius: { card: "16px" },
-      boxShadow: { card: "0 1px 2px rgba(1,40,80,.06), 0 6px 18px rgba(1,40,80,.07)" },
+      fontSize: { "2xs": ["11px", "16px"] },
+      borderRadius: { card: "10px" },
+      boxShadow: {
+        card: "0 1px 2px rgba(16,24,40,.05)",
+        pop: "0 8px 24px rgba(16,24,40,.12), 0 2px 6px rgba(16,24,40,.06)",
+      },
     },
   },
   plugins: [],
