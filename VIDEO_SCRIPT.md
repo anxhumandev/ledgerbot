@@ -1,146 +1,128 @@
-# LedgerBot: recording guide (enterprise app)
-### TBO VoyageHack 4.0 · Problem 3 · Team TravellerTech · narrated by Anshuman
+# LedgerBot: recording guide (8 minutes)
+### TBO VoyageHack 4.0 · Problem 3, Multi Supplier Optimization · Team TravellerTech · narrated by Anshuman, for the judges
 
-A run sheet for recording the product as an operations team would use it. Each step says **what to do** (👆) and **what to say** (🎙). Do a step, say its line, then move on.
+A run sheet for an 8-minute recording of the live product. Each step says **what to do** (👆) and **what to say** (🎙). Do a step, say its line, then move on.
 
-**Length:** about 9 minutes (about 1,100 spoken words plus pauses). TBO's limit is 10 minutes.
-**You need:** the app at http://localhost:5174, a screen recorder at 1920×1080, a mic. The deck is optional (two cut-ins are marked).
+**Length:** 8:00. That's about 650 spoken words (under 5 minutes at a calm pace) plus clicking and waiting. Every section's slot leaves room for its clicks; the timestamps are targets, so check them when you edit.
+**You stay as Dev Admin the whole time.** The admin can do everything, so there's no switching identities on camera.
 
 ---
 
 ## Before you start (5 minutes)
 
 1. **Start the app** if it isn't running (PowerShell, in the `tessera` folder): `.venv\Scripts\python dev.py`. Wait until http://localhost:5174 shows *Operations Overview*.
-2. Open the app in Chrome or Edge, full screen (F11).
-3. **Clean slate:** the app opens as **Dev Admin** (bottom of the sidebar). Go to **Settings → Workspace → Reset workspace…**, give a reason ("Recording"), confirm. Stay as Dev Admin.
-4. Start recording. Stay silent for 2 seconds before you speak.
+2. Open the app in Chrome or Edge, full screen (F11), 1920×1080 if you can.
+3. **Clean slate:** check the bottom of the sidebar says **Dev Admin**. Go to **Settings → Workspace → Reset workspace…**, reason "Recording", confirm.
+4. **Get the sample feed ready:** go to **Data Ingestion**, click **Sample JSON**. The file `novabeds_sample.json` lands in your Downloads folder.
+5. Click **Overview**. Start recording. Stay silent for 2 seconds.
 
-**Rules for what you say:** keep numbers exactly as the screen shows them (if the screen differs from this guide, say the screen's number). Say "simulated" for supplier bookings and the commercial simulation, and "synthetic" for the data.
+**When you speak:** keep numbers exactly as the screen shows them; if the screen differs from this guide, say the screen's number. Say "simulated" for the supplier simulation and the commercial replay, and "synthetic" for the data.
 
 **Easiest way alone:** record the clicks silently first, then record your voice over the video.
 
 ---
 
-## 1 · Operations Overview (0:00–1:00)
+## 1 · The problem, and the platform (0:00–0:45)
 
-**You start on:** *Operations Overview*, with eight KPI cards.
+**You start on:** *Operations Overview*.
 
 1. 👆 Do nothing for 2 seconds.
-   🎙 "This is LedgerBot, an inventory intelligence platform for TBO's multi-supplier catalog. I'm Anshuman, from team TravellerTech.
-   TBO gets the same hotel, room and tour from many suppliers. LedgerBot turns those listings into one trustworthy catalog, and runs the operations around it."
-2. 👆 Point at the KPI cards from left to right.
-   🎙 "Here's the workspace on a Monday morning: over eight thousand supplier listings consolidated into about two and a half thousand properties and thirty-three experiences, ninety-nine percent of listings consolidated, and the matches waiting for an analyst. Every number is tagged: measured, simulated or live."
-3. 👆 Scroll down to **Needs attention**.
-   🎙 "Below, the work: match reviews, supplier problems, failed imports, location mismatches. Each row opens the screen where it gets fixed."
+   🎙 "Hello judges, I'm Anshuman from team TravellerTech, and this is LedgerBot.
+   TBO gets the same hotel, room and tour from many suppliers, under different names, codes and terms. That creates duplicate results, wrong-room bookings, and the wrong supplier winning. LedgerBot is the operations platform that fixes this: one trustworthy catalog, and the best offer for every search."
+2. 👆 Point across the KPI cards.
+   🎙 "This is the workspace: over eight thousand supplier listings consolidated into about two and a half thousand properties and thirty-three experiences, and the matches still waiting for a person. Every number is tagged measured, simulated or live."
 
 ---
 
-## 2 · One property, every supplier (1:00–2:30)
+## 2 · One hotel, every supplier (0:45–1:55)
 
-1. 👆 Press **Ctrl K**, type `atlantis the palm`, press **Enter**.
-   🎙 "Let's open a property. Search works with any supplier's spelling."
-2. 👆 Click the **Supplier records** tab.
-   🎙 "Atlantis The Palm, from five suppliers: different names, phone formats and pins, each compared with the golden record."
-3. 👆 Click the **Rooms** tab.
-   🎙 "Rooms are matched on what the room physically is: class, bed, view, occupancy. Meal plan and cancellation are rate terms, so they never decide room identity."
-4. 👆 Click the **Offers** tab.
-   🎙 "Offers only compete inside the same room and the same terms. Each group gets one recommended offer, with its own price, cancellation deadline and payment terms, and the reasons it won."
-5. 👆 Click the **Matching evidence** tab.
-   🎙 "And here's why. On the left, every link that merged these listings. On the right, what was kept apart: Atlantis The Royal, same brand, same island, but a different property."
+1. 👆 Press **Ctrl K**, type `atlantis the palm`, press **Enter**. Click the **Supplier records** tab.
+   🎙 "Atlantis The Palm, from five suppliers: different spellings, phone formats and map pins, matched into one canonical record."
+2. 👆 Click the **Offers** tab.
+   🎙 "Rooms are matched on what the room physically is, never on meal plan or cancellation. Offers only compete inside the same room and terms, and each group gets one recommended offer, with its own price, deadline and payment terms, and the reasons it won."
+3. 👆 Click the **Matching evidence** tab.
+   🎙 "And it's explainable. Left: every link that merged these listings. Right: what was kept apart. Atlantis The Royal: same brand, same island, but a different hotel."
 
 ---
 
-## 3 · Match Review (2:30–3:45)
+## 3 · One experience, several options (1:55–2:25)
 
-1. 👆 Click **Match Review** in the sidebar. In the queue, click a case **without** the red "supplier conflict" label.
-   🎙 "Some pairs the engine won't decide alone. They come here, most uncertain first."
-2. 👆 Point at the comparison table, then the evidence bars on the right.
-   🎙 "The two records side by side, differences highlighted, and the model's own evidence for and against, with the thresholds it is allowed to act within."
-3. 👆 Click **Confirm match**, read the dialog for a second, click **Confirm match**.
-   🎙 "I confirm. That merges the two properties in the catalog, records who decided and why, and can be undone from this case."
-4. 👆 Click the property link in the *Current mapping* notice.
-   🎙 "The canonical record already shows both listings."
-5. 👆 Go back. In the queue, click a case **with** the red "supplier conflict" label.
-   🎙 "And when a merge would put two listings from the same supplier into one hotel, LedgerBot blocks it and tells the analyst why."
+1. 👆 Click **Inventory Catalog**, then **Sightseeing**. Search `burj`. Open **Burj Khalifa: At the Top · Levels 124/125**, then click the **Options** tab.
+   🎙 "Sightseeing too. Level 148 and levels 124 and 125 are different products. Inside a product, options keep apart what the customer buys: time slot, private or shared, transfers, meals and duration. A two-hour and a four-hour tour are never merged; '4h' and '240 minutes' are recognised as the same."
 
 ---
 
-## 4 · Matching policy (3:45–4:20)
+## 4 · A person decides the hard cases (2:25–3:25)
 
-1. 👆 Click **Policies** under Match Review. Drag the **Risk budget** slider slowly from 1% down to about 0.5%, then back. Don't apply.
-   🎙 "The business chooses the risk: say, at most one percent of automatic merges may be wrong. LedgerBot certifies its thresholds for that budget and checks them on hotels it has never seen. Tighter budget, more human review; the preview shows the trade-off before anyone applies it."
-
----
-
-## 5 · A new supplier feed (4:20–5:30)
-
-1. 👆 Switch identity to **Rahul Mehta** (Supplier Operations). Click **Data Ingestion**. Click **Sample JSON** to download, then drag the file onto the drop zone (or **Browse files**). Supplier: **S6 · NovaBeds**. Click **Validate file**.
-   🎙 "Now a new supplier, NovaBeds, sends its first feed. Supplier operations upload it, and LedgerBot validates it before anything changes: schema, duplicates, coordinates, unknown cities."
-2. 👆 Point at the issues and the preview. Click **Import … valid records**, then **Start import**.
-   🎙 "Warnings are shown up front. On confirmation, every record runs through the same matching pipeline as the catalog."
-3. 👆 Wait for **Completed**. Point at the outcome counts and the record list.
-   🎙 "Most NovaBeds hotels merge into properties we already have. Genuinely new ones become new properties, and anything ambiguous goes to review. Every outcome is recorded, and a failed job can be retried."
+1. 👆 Click **Match Review**. In the queue, click a case **without** the red "supplier conflict" label.
+   🎙 "Most matches are automatic, within a risk budget the business sets: at most one percent of automatic merges may be wrong, certified statistically and checked on hotels the model never saw. The uncertain pairs come here."
+2. 👆 Point at the comparison table, then the evidence bars.
+   🎙 "Both records side by side, with the model's evidence for and against."
+3. 👆 Click **Confirm match**, then **Confirm match** in the dialog.
+   🎙 "I confirm. The two properties merge in the catalog, the decision is recorded with who and why, and it can be undone. If a merge would put two listings from one supplier into one hotel, LedgerBot blocks it."
 
 ---
 
-## 6 · When a supplier degrades (5:30–6:30)
+## 5 · A new supplier feed (3:25–4:30)
+
+1. 👆 Click **Data Ingestion**. Drag `novabeds_sample.json` from Downloads onto the drop zone (or **Browse files**). Supplier: **S6 · NovaBeds**. Click **Validate file**.
+   🎙 "A new supplier, NovaBeds, sends its first feed. LedgerBot validates it before anything changes, and shows every issue up front."
+2. 👆 Click **Import 40 valid records**, then **Start import**. Wait for **Completed**.
+   🎙 "On confirmation, every record runs through the same matching pipeline. Hotels we already have are merged; genuinely new ones become new properties; anything ambiguous goes to review. What used to take weeks of manual mapping takes seconds, and every outcome is recorded."
+
+---
+
+## 6 · When a supplier degrades (4:30–5:25)
 
 1. 👆 Click **Suppliers**, then **GlobalBeds**, then the **Reliability** tab.
-   🎙 "Every supplier has a live reliability score: how often bookings confirm at the quoted price. It's built from booking outcomes; here, a synthetic thirty-day history."
+   🎙 "Each supplier has a reliability score: how often bookings confirm at the quoted price."
 2. 👆 Under *What-if*, keep **Price changes at booking** and **35%**. Click **Start simulation**, then **Start simulation** in the dialog. Stay quiet for about 15 seconds.
    🎙 *(after a few seconds)* "This is a simulation. GlobalBeds starts changing prices at checkout. Nobody tells LedgerBot; its score falls only as simulated bookings fail."
-3. 👆 Wait for the orange message about offer groups.
-   🎙 "And offer selection reacts: about a hundred offer groups move to more reliable suppliers on their own."
-4. 👆 Click **Clear simulated faults**, then **Stop booking stream**.
+3. 👆 When the orange message about offer groups appears, point at it. Then click **Clear simulated faults** and **Stop booking stream**.
+   🎙 "And offer selection reacts on its own, moving these offer groups to more reliable suppliers."
 
 ---
 
-## 7 · Offer intelligence (6:30–7:35)
+## 7 · The best offer, and what it's worth (5:25–6:35)
 
-1. 👆 Switch identity to **Sara Khan** (Revenue). Click **Offer Intelligence**. Search `atlantis the palm` and select it. Under *Requirements*, click **BB** and choose **Free cancellation only**.
-   🎙 "Revenue analysts compare every supplier offer under the customer's requirements: breakfast, free cancellation."
-2. 👆 Point at a recommended row and its reasons.
-   🎙 "The recommendation is explained: lowest eligible price, or a small premium within the competitiveness cap for a much more reliable supplier. A supplier can never win on margin alone."
-3. 👆 Switch the view to **Clean Feed API**.
-   🎙 "API customers get exactly the same answer as data: canonical rooms, one offer per term, and backup suppliers."
-4. 👆 Click **Optimization** in the sidebar. Click **Run 50,000 searches** and wait for the table.
-   🎙 "In simulation, with the same agents and suppliers, the clean shelf earns more per search, with fewer failed bookings and wrong-room incidents. Simulated, not measured, and labelled that way."
+1. 👆 Click **Offer Intelligence**. Search `atlantis the palm` and select it. Under *Requirements*, click **BB** and choose **Free cancellation only**.
+   🎙 "Revenue teams compare every supplier offer under the customer's needs: here, breakfast and free cancellation."
+2. 👆 Point at a recommended row and its reasons. Then set **Compare offers by** to **Identical rate plan**.
+   🎙 "The pick is explained: lowest price, or a small premium within a competitiveness cap for a far more reliable supplier. A supplier can never win on margin alone. And analysts can go strictly like for like: same deadline, same payment terms."
+3. 👆 Click **Optimization** in the sidebar. Click **Run 50,000 searches** and wait for the table.
+   🎙 "What is it worth? In a simulation with the same agents and suppliers, the clean shelf earns more gross profit per search, with fewer failed bookings and wrong-room incidents. That's simulated, and labelled that way; a shadow pilot measures it for real."
 
 ---
 
-## 8 · Search ranking (7:35–8:15)
+## 8 · Search ranking (6:35–7:05)
 
 1. 👆 Click **Search Ranking**. Switch **Agent profile** between *Riya* and *Mark*.
-   🎙 "Agents are different. A Delhi family-holiday agent and a US luxury advisor get different first pages for the same search, each with the eligible offer and why it's there."
-2. 👆 Click **Experiments**.
-   🎙 "Before changing ranking for real traffic, the team compares strategies here: positions, offers, and offline ranking quality."
+   🎙 "Different agents get different first pages for the same search: a Delhi family-holiday agent and a US luxury advisor. Every result shows one real, bookable offer, the same offer the ranking model scored."
 
 ---
 
-## 9 · Measured, and traceable (8:15–9:10)
+## 9 · Measured, traceable, ready (7:05–8:00)
 
 1. 👆 Click **Analytics**.
-   🎙 "The matching is measured on held-out hotels: precision and recall above ninety-eight percent, and zero contradictions in the catalog. Sightseeing keeps products and options apart just as reliably."
+   🎙 "The matching is measured on held-out hotels: precision and recall above ninety-eight percent, and zero contradictions in the catalog."
 2. 👆 Click **Quality & Audit**.
-   🎙 "And everything we just did, the confirmed match, the import, the simulation, is in an append-only audit trail: who, when, what changed, and why."
+   🎙 "Everything I just did, the merge, the import, the simulation, is in an append-only audit trail."
 3. 👆 Click **Overview** and hold.
-   🎙 "LedgerBot: one trustworthy catalog, decisions you can explain and undo, and offers chosen for value and reliability. Built on TBO's data, ready for a shadow pilot. I'm Anshuman, for TravellerTech. Thank you."
+   🎙 "This runs today on synthetic supplier feeds built to behave like real ones, and it is ready to plug into TBO's sandbox data in the prototype round. LedgerBot: one trustworthy catalog, decisions you can explain, and offers chosen for value and reliability. I'm Anshuman, for TravellerTech. Thank you."
 4. 👆 Stay silent 2 seconds, stop recording.
 
 ---
 
-## If you run long (cut in this order)
+## If a take runs over 8:00 (cut in this order)
 
-1. Section 8 step 2 (Experiments).
-2. Section 4 (Policies).
-3. Section 7 step 3 (Clean Feed API).
-4. Section 3 step 5 (supplier conflict).
-5. Section 2 step 3 (Rooms).
+1. Section 8 (ranking), about 30 s.
+2. Section 7, step 2, the second half (identical rate plan), about 10 s.
+3. Section 2, step 3 (matching evidence), about 20 s.
 
 ## Final checklist
 
-- [ ] Workspace reset before recording; identity is Dev Admin.
+- [ ] Workspace reset before recording; identity is Dev Admin; the sample file is in Downloads.
 - [ ] Simulated fault cleared and booking stream stopped after Section 6.
-- [ ] "Simulated" said for the supplier simulation and the commercial replay; "synthetic" for the data.
+- [ ] "Simulated" said for the supplier simulation and the replay; "synthetic" for the data.
 - [ ] Numbers you said match the screen.
-- [ ] Final length under 10:00; subtitles burned in; audio checked.
+- [ ] Final length 8:00 or less; subtitles burned in; audio checked on speakers and headphones.
