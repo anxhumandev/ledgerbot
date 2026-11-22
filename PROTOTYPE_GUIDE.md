@@ -37,13 +37,13 @@ Research: uncertainty sampling for active learning (Settles, 2009); human-in-the
 
 **Where:** record → *Rooms* and *Offers*; Offer Intelligence.
 
-Rooms (`pipeline/rooms.py`) are grouped on physical attributes only. Offers form comparable groups by physical room × meal plan × refundability × occupancy × nights. Selection (`services/offers_svc.py`): paused suppliers and offers above the price-competitiveness cap are ineligible; among the rest, the highest expected value wins (P(book) × P(confirm at quoted price) × margin − (1 − P(confirm)) × failure cost). The recommended offer is always shown with its own price, cancellation deadline and payment terms, and the reasons are listed. The Clean Feed API (`GET /api/v1/hotels/{id}/offers`) serves the same selection to API buyers.
+Rooms (`pipeline/rooms.py`) are grouped on physical attributes only. Offers form *comparable groups* by physical room × meal plan × refundability × occupancy × nights; an *identical rate plan* (`offers.rate_plan_key`) also matches the free-cancellation deadline and payment method. Offer Comparison can compare by either. Selection (`services/offers_svc.py`): paused suppliers are ineligible, and the price-competitiveness cap is measured against the cheapest offer from a supplier that can actually be booked. Among the rest, the highest expected value wins (P(book) × P(confirm at quoted price) × margin − (1 − P(confirm)) × failure cost). The recommended offer is always shown with its own price, cancellation deadline and payment terms, and the reasons are listed. The Clean Feed API (`GET /api/v1/hotels/{id}/offers`) serves the same selection to API buyers.
 
 ## 5. Sightseeing: product, option, unit
 
 **Where:** Inventory → Sightseeing; record → *Options* and *Matching evidence*; Offer Intelligence → Sightseeing.
 
-`pipeline/activities.py` follows the OCTO model. A different attraction or access tier is a different product (Burj Khalifa levels 124/125 vs 148). Within a product, time slot, transfer, meal, private vs shared, language and add-ons define the options, so tours with different inclusions are never merged. Product and option F1 on the synthetic ground truth are shown in Analytics.
+`pipeline/activities.py` follows the OCTO model. A different attraction or access tier is a different product (Burj Khalifa levels 124/125 vs 148). Within a product, time slot, transfer, meal, private vs shared, language and add-ons define the options, so tours with different inclusions are never merged. Durations are compared as intervals (`normalize.duration_range`): precise durations within about 15% (at least ±30 min) agree, while "half day" and "full day" are wide ranges. Listings whose durations cannot overlap become separate options. When a feed provides cancellation terms, they are normalised and also split options; these synthetic feeds have none. Products are rebuilt at server start, so rule changes apply without re-running the pipeline. Product and option F1 on the synthetic ground truth are shown in Analytics.
 
 ## 6. Supplier reliability and fault simulation
 
@@ -57,7 +57,7 @@ Research: Bayesian posteriors for bandit-style reliability estimation (Russo et 
 
 **Where:** Search Ranking → Preview and Experiments.
 
-`pipeline/ranking.py` is LambdaRank trained on simulated search logs with inverse-propensity weighting (propensities estimated from randomised sessions). Business weights (margin, Platinum, reliability risk) are blended in under a Kendall-τ guardrail. Offline NDCG@10 against the known true relevance is shown (naive vs IPW). Sightseeing uses transparent rule-based scoring.
+`pipeline/ranking.py` is LambdaRank trained on simulated search logs with inverse-propensity weighting (propensities estimated from randomised sessions). Each hotel's features describe one coherent lead offer (`ranking.lead_offer`: the cheapest eligible expected-value winner across its comparable groups, the same offer the preview shows). Whether refundable or breakfast rates exist at any price is a separate set of availability features. The previous build mixed the cheapest price with "any refundable rate" flags; for 91% of Dubai hotels the shown rate was not actually refundable. Business weights (margin, Platinum, reliability risk) are blended in under a Kendall-τ guardrail. Offline NDCG@10 against the known true relevance is shown (naive vs IPW). Sightseeing uses transparent rule-based scoring.
 
 Research: unbiased learning to rank (Joachims, Swaminathan & Schnabel, WSDM 2017); LambdaMART (Burges, 2010).
 

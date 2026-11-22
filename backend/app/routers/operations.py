@@ -143,8 +143,9 @@ def offer_search(type: str = Query("hotel", pattern="^(hotel|activity)$"), q: st
 
 @router.get("/offers/hotel/{tid}")
 def hotel_offers(tid: str, nights: int = Query(3, ge=1, le=30), board: str = "", refundable: str = Query("", pattern="^(|yes|no)$"),
-                 payment: str = Query("", pattern="^(|prepay|pay_later)$"), supplier: str = ""):
-    return offers_svc.hotel_offers(tid, nights, board, refundable, payment, supplier)
+                 payment: str = Query("", pattern="^(|prepay|pay_later)$"), supplier: str = "",
+                 compare: str = Query("group", pattern="^(group|plan)$")):
+    return offers_svc.hotel_offers(tid, nights, board, refundable, payment, supplier, compare)
 
 
 @router.get("/offers/activity/{pid}")

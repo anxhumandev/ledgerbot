@@ -24,10 +24,15 @@ class Demo:
     def load(self):
         t0 = time.time()
         self.state = pipeline_run.load()
+        self._rebuild_products()
         self.base_state = self.state
         self.base_matcher = Matcher.load()
         self.matcher = self.base_matcher
         self.ranking = ranking.load()
+        if self.ranking["models"]["ipw"].n_features_ != len(ranking.FEATS):
+            # model trained before the ranking features changed (coherent lead offer + availability): retrain once
+            print("Ranking model is out of date with the feature set; retraining...")
+            self.ranking = ranking.train(self.state)
         self.reliability = ReliabilityBook()
         self.base_hotels = self.state["hotels"]
         self.base_record_cluster = self.state["record_cluster"]
@@ -46,6 +51,18 @@ class Demo:
         self.reset(initial=True)
         self.ready = True
         print(f"Demo state loaded in {time.time() - t0:.1f}s")
+
+    def _rebuild_products(self):
+        """Sightseeing products are cheap to build; rebuilding them at load keeps option rules (duration intervals,
+        cancellation terms) current without re-running the whole pipeline. Ground truth is used only for the metric."""
+        import orjson
+        from app.pipeline import activities as act
+        listings = orjson.loads((config.WORLD_DIR / "activities_raw.json").read_bytes())
+        truth = orjson.loads((config.WORLD_DIR / "truth.json").read_bytes())["activity_of_listing"]
+        products = act.build_products(listings)
+        self.state["products"] = products
+        self.state["activity_eval"] = act.evaluate(products, truth)
+        self.state["summary"] = {**self.state["summary"], "activity_products": len(products)}
 
     # ------------------------------------------------------------------ risk
     def risk_at(self, alpha: float) -> dict:

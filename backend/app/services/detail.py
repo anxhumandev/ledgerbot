@@ -105,16 +105,20 @@ def activity(pid: str) -> dict:
         options.append({"label": o["label"], "time_slot": k[0], "transfer": bool(k[1]), "meal": bool(k[2]), "private": bool(k[3]),
                         "language": k[4], "addons": list(k[5]) if len(k) > 5 else [], "suppliers": o["suppliers"],
                         "best_adult": o["best_adult"], "duration_range": [durations[0], durations[-1]] if durations else None,
-                        "units": units})
+                        "duration_window": o.get("duration_window"), "cancellation": o.get("cancellation"), "units": units})
     distinct_axes = []
     if len(options) > 1:
-        for axis in ("time_slot", "transfer", "meal", "private", "language", "addons"):
+        for axis in ("time_slot", "transfer", "meal", "private", "language", "addons", "cancellation"):
             if len({str(o[axis]) for o in options}) > 1:
                 distinct_axes.append(axis)
+        same_keys = [tuple(str(o[a]) for a in ("time_slot", "transfer", "meal", "private", "language", "addons", "cancellation")) for o in options]
+        if len(set(same_keys)) < len(same_keys):  # some options differ only by duration
+            distinct_axes.append("duration")
     return {**row, "attraction": p["attraction"], "access_tier": p["tier"], "options": options,
             "merge_rule": "Listings join this product when they describe the same attraction and the same access tier. "
                           "Within it, listings join one option only when time slot, transfer, meal, private/shared, language "
-                          "and add-ons all agree.",
+                          "and add-ons all agree, their durations can overlap (\"4h\" and \"240 minutes\" can; \"2h\" and "
+                          "\"4h\" cannot), and cancellation terms match when the feed provides them.",
             "kept_separate_products": siblings, "option_axes": distinct_axes,
             "evaluation": DEMO.state["activity_eval"], "history": audit.for_entity("activity", pid)}
 

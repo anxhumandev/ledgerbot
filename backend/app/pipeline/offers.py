@@ -1,7 +1,11 @@
-"""Offer slots and expected-value offer selection.
+"""Offer slots, rate plans and expected-value offer selection.
 
-Offers inside one physical room group merge into an *offer slot* only when
-(board, refundable, occupancy, nights) are all equal. Inside a slot, suppliers compete:
+Two levels of equivalence:
+- A *comparable offer group* (offer slot): same physical room and (board, refundable, occupancy, nights). Offers
+  in one group answer the same customer need, so suppliers compete inside it.
+- An *identical rate plan*: a comparable group that also agrees on the free-cancellation deadline and the payment
+  method (rate_plan_key). Only offers with an identical rate plan are true like-for-like substitutes.
+Inside a slot, suppliers compete:
 
     EV = P(book | price_rel, terms) x P(success | supplier) x margin - (1 - P(success)) x failure_cost
     P(book) = sigmoid(a - b*(price_rel - 1) + c*refundable + d*pay_later),  price_rel = price / slot min
@@ -31,6 +35,19 @@ def normalize_offer(o: dict) -> dict:
 
 def slot_key(group_idx: int, o: dict) -> tuple:
     return (group_idx, o["board"], o["refundable"], o["occupancy"], o["nights"])
+
+
+def rate_plan_key(o: dict) -> tuple:
+    """Identical rate plan: the comparable-group terms plus cancellation deadline and payment method."""
+    return (o["board"], bool(o["refundable"]), int(o.get("cancel_hours") or 0) if o["refundable"] else None,
+            o.get("payment", "prepay"), int(o.get("occupancy", 2)), int(o.get("nights", 1)))
+
+
+def rate_plan_label(o: dict) -> str:
+    b = BOARD_LABEL.get(o["board"], o["board"])
+    canc = (f"free cancellation until {int(o.get('cancel_hours') or 0)} h before" if o.get("cancel_hours") else "free cancellation")         if o["refundable"] else "non-refundable"
+    pay = "pay later" if o.get("payment") == "pay_later" else "prepay"
+    return f"{b} · {canc} · {pay}"
 
 
 def slot_label(board: str, refundable: bool, hours: int | None = None) -> str:
@@ -89,4 +106,4 @@ def why_chip(win, cheapest, ranked, strategy) -> str:
             f"→ +₹{gain:,.0f} expected")
 
 
-__all__ = ["normalize_offer", "slot_key", "slot_label", "select", "score_slot", "BOARD_LABEL"]
+__all__ = ["normalize_offer", "slot_key", "slot_label", "rate_plan_key", "rate_plan_label", "select", "score_slot", "BOARD_LABEL"]

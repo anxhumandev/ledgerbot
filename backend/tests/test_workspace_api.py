@@ -230,3 +230,46 @@ def test_overview_analytics_ranking(client):
 def test_structured_validation_error(client):
     r = client.get("/api/inventory", params={"page": 0})
     assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_request" and r.headers.get("X-Request-ID")
+
+
+def test_price_cap_baseline_ignores_paused_suppliers(client):
+    from app.services import offers_svc
+    offers = [{"offer_id": "x1", "supplier": "S5", "price": 5000, "refundable": True, "payment": "prepay"},
+              {"offer_id": "x2", "supplier": "S1", "price": 10000, "refundable": True, "payment": "prepay"},
+              {"offer_id": "x3", "supplier": "S3", "price": 10300, "refundable": True, "payment": "prepay"}]
+    sel = offers_svc.select(offers, cap_pct=5, paused={"S5"})
+    rows = {o["offer_id"]: o for o in sel["rows"]}
+    assert not rows["x1"]["eligible"] and rows["x1"]["ineligible_reason"] == "Supplier feed paused"
+    assert rows["x2"]["eligible"] and rows["x3"]["eligible"], "a paused supplier's price must not set the cap baseline"
+    assert sel["cheapest"]["offer_id"] == "x2" and sel["winner"] is not None
+    assert offers_svc.select(offers, cap_pct=5, paused={"S5", "S1", "S3"})["winner"] is None
+
+
+def test_identical_rate_plan_comparison(client):
+    tid = client.get("/api/inventory", params={"q": "atlantis the palm"}).json()["items"][0]["id"]
+    grp = client.get(f"/api/offers/hotel/{tid}", params={"compare": "group"}).json()
+    plan = client.get(f"/api/offers/hotel/{tid}", params={"compare": "plan"}).json()
+    assert grp["compare"] == "group" and plan["compare"] == "plan"
+    assert plan["n_groups"] >= grp["n_groups"] and plan["n_offers"] == grp["n_offers"]
+    for room in plan["rooms"]:
+        for g in room["groups"]:
+            assert g["kind"] == "identical" and len({o["rate_plan_id"] for o in g["offers"]}) == 1
+    for room in grp["rooms"]:
+        for g in room["groups"]:
+            assert g["terms_differ"] == (len(g["rate_plans"]) > 1)
+    assert client.get(f"/api/offers/hotel/{tid}", params={"compare": "nope"}).status_code == 422
+
+
+def test_ranking_features_describe_one_coherent_offer(client):
+    from app.demo import DEMO
+    t = DEMO.hotel_table
+    assert t
+    for tid, row in t.items():
+        h = DEMO.hotels[tid]
+        o = next(o for g in h["rooms"] for s in g["slots"] for o in s["offers"] if o["offer_id"] == row["lead_offer_id"])
+        assert (o["price"], o["supplier"], bool(o["refundable"]), o["board"] in ("BB", "HB", "FB", "AI")) ==                (row["price"], row["head_supplier"], row["refundable"], row["breakfast"])
+        assert row["refundable_available"] >= row["refundable"] and row["breakfast_available"] >= row["breakfast"]
+    # the ranking preview's "from" offer is the same lead offer the ranker used
+    res = client.get("/api/ranking/hotels", params={"persona": "riya", "strategy": "relevance"}).json()["results"]
+    for r in res[:5]:
+        assert r["offer"]["total"] == t[r["tessera_id"]]["price"] * 3 and r["offer"]["supplier"] == t[r["tessera_id"]]["head_supplier"]

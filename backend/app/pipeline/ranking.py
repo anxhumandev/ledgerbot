@@ -18,12 +18,13 @@ import pandas as pd
 from scipy.stats import kendalltau
 
 from app import config
+from app.pipeline import offers as off
 from data.tables import CITIES, PERSONAS
 
 PERSONA = {p["id"]: p for p in PERSONAS}
 FEATS = ["price_log", "price_rel_median", "price_rank", "stars", "star_gap", "review", "dist_pref_km", "in_pref_area",
          "budget_ratio", "refundable", "refundable_need", "breakfast", "breakfast_aff", "suite", "suite_aff",
-         "reliability", "popularity"]
+         "reliability", "popularity", "refundable_available", "refundable_avail_need", "breakfast_available", "breakfast_avail_aff"]
 NB_CENTER = {nb: ((a + b) / 2, (c + d) / 2) for nb, (a, b, c, d) in CITIES["dubai"]["neighbourhoods"].items()}
 MODEL_PATH = config.CACHE_DIR / "ranking.pkl"
 
@@ -32,26 +33,58 @@ def km(lat1, lng1, lat2, lng2):
     return math.hypot((lat1 - lat2) * 111.3, (lng1 - lng2) * 111.3 * math.cos(math.radians(lat1)))
 
 
-def hotel_table(state: dict, p_success=None) -> dict:
-    """Per Dubai tessera hotel: content + headline offer attributes."""
+def lead_offer(h: dict, p_success, cap_pct: float = config.DEFAULT_PRICE_CAP_PCT, paused: frozenset = frozenset()) -> dict | None:
+    """The offer a search result shows for this hotel: in each comparable group (room x board x refundability) the
+    eligible expected-value winner (cheapest available offer sets the competitiveness baseline; paused suppliers
+    excluded); across groups, the cheapest of those winners. Its price, supplier and terms are one coherent offer."""
+    best = None
+    for g in h.get("rooms") or []:
+        for s in g["slots"]:
+            avail = [o for o in s["offers"] if o["supplier"] not in paused]
+            if not avail:
+                continue
+            scored = off.score_slot(avail, p_success)
+            base = min(o["price"] for o in scored)
+            elig = [o for o in scored if (o["price"] / base - 1) * 100 <= cap_pct + 1e-9]
+            w = max(elig, key=lambda o: (o["ev"], -o["price"]))
+            if best is None or w["price"] < best["price"]:
+                best = w
+    return best
+
+
+def hotel_table(state: dict, p_success=None, cap_pct: float | None = None, paused=frozenset()) -> dict:
+    """Per Dubai hotel: content features plus the attributes of ONE coherent lead offer (price, supplier, meal plan,
+    refundability all describe the same bookable offer). What the hotel offers at other price points is modelled
+    separately as availability flags (refundable_available, breakfast_available)."""
     recs = {r["record_id"]: r for r in state["recs"]}
+    if p_success is None:
+        prior = {c: v["profile"]["confirm"] * (1 - v["profile"]["price_jump"]) for c, v in config.SUPPLIERS.items()}
+        p_success = lambda c: prior.get(c, 0.97)  # noqa: E731
+    cap = config.DEFAULT_PRICE_CAP_PCT if cap_pct is None else cap_pct
     out = {}
     for tid, h in state["hotels"].items():
         if h["city"] != "dubai" or not h.get("rooms"):
             continue
-        offers = [o for g in h["rooms"] for s in g["slots"] for o in s["offers"]]
-        if not offers:
+        lead = lead_offer(h, p_success, cap, frozenset(paused))
+        if lead is None:
             continue
-        cheapest = min(offers, key=lambda o: o["price"])
-        reviews = [recs[r]["review_score"] for r in h["members"] if recs[r].get("review_score")]
+        offers = [o for g in h["rooms"] for s in g["slots"] for o in s["offers"]]
+        reviews = [recs[r]["review_score"] for r in h["members"] if r in recs and recs[r].get("review_score")]
         out[tid] = {
             "tid": tid, "name": h["name"], "stars": h["stars"] or 3, "neighbourhood": h["neighbourhood"],
-            "lat": h["lat"], "lng": h["lng"], "price": cheapest["price"], "head_supplier": cheapest["supplier"],
-            "refundable": any(o["refundable"] for o in offers), "breakfast": any(o["board"] in ("BB", "HB", "FB", "AI") for o in offers),
+            "lat": h["lat"], "lng": h["lng"],
+            # the lead offer
+            "price": lead["price"], "head_supplier": lead["supplier"], "lead_offer_id": lead["offer_id"],
+            "refundable": bool(lead["refundable"]), "breakfast": lead["board"] in ("BB", "HB", "FB", "AI"),
+            "lead_board": lead["board"], "lead_cancel_hours": lead.get("cancel_hours") if lead["refundable"] else None,
+            "lead_payment": lead.get("payment"),
+            "margin": lead["price"] * config.SUPPLIERS[lead["supplier"]]["take_rate"],
+            # availability at any price point, kept separate from the lead offer
+            "refundable_available": any(o["refundable"] for o in offers),
+            "breakfast_available": any(o["board"] in ("BB", "HB", "FB", "AI") for o in offers),
             "suite": any(g["ident"].get("class") in ("Junior Suite", "Suite", "Villa") for g in h["rooms"]),
             "review": float(np.mean(reviews)) if reviews else 7.8,
-            "platinum": any(recs[r].get("platinum") for r in h["members"]),
-            "margin": cheapest["price"] * config.SUPPLIERS[cheapest["supplier"]]["take_rate"],
+            "platinum": any(recs[r].get("platinum") for r in h["members"] if r in recs),
             "hero": (h.get("photos") or {}).get("hero"),
         }
     return out
@@ -68,7 +101,9 @@ def features_for(persona: dict, rows: list[dict], reliability: dict, popularity:
                 r["review"], d, float(r["neighbourhood"] in persona["areas"]), math.log(r["price"] / persona["budget"]),
                 float(r["refundable"]), float(r["refundable"]) * persona["refundable"], float(r["breakfast"]),
                 float(r["breakfast"]) * persona["breakfast"], float(r["suite"]), float(r["suite"]) * persona["suite"],
-                reliability.get(r["head_supplier"], 0.97), popularity.get(r["tid"], 0.0)]
+                reliability.get(r["head_supplier"], 0.97), popularity.get(r["tid"], 0.0),
+                float(r["refundable_available"]), float(r["refundable_available"]) * persona["refundable"],
+                float(r["breakfast_available"]), float(r["breakfast_available"]) * persona["breakfast"]]
     return X
 
 
@@ -176,12 +211,16 @@ WHY = {
     "stars": lambda p, r: f"{r['stars']}★ property",
     "in_pref_area": lambda p, r: f"In {r['neighbourhood']}" if r["neighbourhood"] in p["areas"] else None,
     "dist_pref_km": lambda p, r: f"Close to {p['areas'][0]}",
-    "refundable_need": lambda p, r: "Free cancellation available" if r["refundable"] else None,
-    "refundable": lambda p, r: "Free cancellation available" if r["refundable"] else None,
+    "refundable_need": lambda p, r: "Shown rate has free cancellation" if r["refundable"] else None,
+    "refundable": lambda p, r: "Shown rate has free cancellation" if r["refundable"] else None,
+    "refundable_available": lambda p, r: "Refundable rates available" if r["refundable_available"] else None,
+    "refundable_avail_need": lambda p, r: "Refundable rates available" if r["refundable_available"] else None,
+    "breakfast_available": lambda p, r: "Breakfast rates available" if r["breakfast_available"] else None,
+    "breakfast_avail_aff": lambda p, r: "Breakfast rates available" if r["breakfast_available"] else None,
     "review": lambda p, r: f"Guests rate it {r['review']:.1f}",
     "suite_aff": lambda p, r: "Suites available" if r["suite"] else None,
     "suite": lambda p, r: "Suites available" if r["suite"] else None,
-    "breakfast_aff": lambda p, r: "Breakfast options" if r["breakfast"] else None,
+    "breakfast_aff": lambda p, r: "Shown rate includes breakfast" if r["breakfast"] else None,
     "budget_ratio": lambda p, r: f"Within budget · ₹{r['price']:,}/night" if r["price"] <= p["budget"] else None,
     "price_rel_median": lambda p, r: f"Good value · ₹{r['price']:,}/night",
     "price_log": lambda p, r: f"Good value · ₹{r['price']:,}/night",

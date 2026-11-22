@@ -17,7 +17,7 @@ from __future__ import annotations
 from app import config
 from app.demo import DEMO
 from app.errors import ApiError
-from app.pipeline import offers as off
+from app.pipeline import normalize, offers as off
 from app.services import catalog, settings_svc
 
 BOARD = off.BOARD_LABEL
@@ -36,8 +36,15 @@ def select(offers: list[dict], cap_pct: float | None = None, paused: set[str] | 
         return {"winner": None, "rows": [], "reasons": [], "cheapest": None}
     cap = settings_svc.get("price_cap_pct") if cap_pct is None else cap_pct
     paused = settings_svc.paused_suppliers() if paused is None else paused
-    scored = off.score_slot(offers, DEMO.p_success)
-    cheapest = min(scored, key=lambda o: (o["price"], o["supplier"]))
+    # The competitiveness baseline is the cheapest offer from a supplier that can actually be booked. A paused
+    # supplier's price must not set the bar, or one cheap unavailable offer could disqualify every usable one.
+    available = [o for o in offers if o["supplier"] not in paused]
+    unavailable = [o for o in offers if o["supplier"] in paused]
+    scored = off.score_slot(available, DEMO.p_success) if available else []
+    if unavailable:  # scored for display only, relative to the same available baseline
+        pool = off.score_slot(unavailable + available, DEMO.p_success)
+        scored += pool[:len(unavailable)]
+    cheapest = min(scored[:len(available)] or scored, key=lambda o: (o["price"], o["supplier"]))
     for o in scored:
         prem = o["price"] / cheapest["price"] - 1 if cheapest["price"] else 0.0
         o["premium_pct"] = prem * 100
@@ -45,7 +52,7 @@ def select(offers: list[dict], cap_pct: float | None = None, paused: set[str] | 
         if o["supplier"] in paused:
             o["eligible"], o["ineligible_reason"] = False, "Supplier feed paused"
         elif prem * 100 > cap + 1e-9:
-            o["eligible"], o["ineligible_reason"] = False, f"{prem * 100:.1f}% above cheapest exceeds the {cap:g}% cap"
+            o["eligible"], o["ineligible_reason"] = False, f"{prem * 100:.1f}% above the cheapest available offer exceeds the {cap:g}% cap"
     elig = [o for o in scored if o["eligible"]]
     winner = max(elig, key=lambda o: (o["ev"], -o["price"])) if elig else None
     reasons = []
@@ -79,10 +86,37 @@ def _hotel_row(o: dict, winner, cheapest, nights: int) -> dict:
             "taxes": None, "availability": "quoted", "rate_code": o.get("rate_code"),
             "reliability": round(float(o["p_success"]), 4), "expected_value": round(float(o["ev"]), 1),
             "premium_pct": round(o["premium_pct"], 2), "cheapest": o is cheapest, "eligible": o["eligible"],
-            "ineligible_reason": o["ineligible_reason"], "status": st}
+            "ineligible_reason": o["ineligible_reason"], "status": st,
+            "rate_plan_id": _plan_id(o), "rate_plan_label": off.rate_plan_label(o)}
 
 
-def hotel_offers(tid: str, nights: int = 3, board: str = "", refundable: str = "", payment: str = "", supplier: str = "") -> dict:
+def _plan_id(o: dict) -> str:
+    b, r, h, pay, occ, n = off.rate_plan_key(o)
+    return f"{b}-{'R' + str(h) if r else 'NR'}-{'PL' if pay == 'pay_later' else 'PP'}-{occ}p{n}n"
+
+
+def _group(label, board, refundable, offs, nights, kind, plan_label=None) -> dict:
+    sel = select(offs)
+    win = sel["winner"]
+    plans = {}
+    for o in offs:
+        plans.setdefault(_plan_id(o), {"id": _plan_id(o), "label": off.rate_plan_label(o), "suppliers": set(), "n_offers": 0})
+        plans[_plan_id(o)]["suppliers"].add(o["supplier"])
+        plans[_plan_id(o)]["n_offers"] += 1
+    return {"kind": kind, "label": label, "plan_label": plan_label, "board": board, "board_label": BOARD.get(board, board),
+            "refundable": refundable, "recommended": _hotel_row(win, win, sel["cheapest"], nights) if win else None,
+            "reasons": sel["reasons"], "offers": [_hotel_row(o, win, sel["cheapest"], nights) for o in sel["rows"]],
+            "rate_plans": [{**pl, "suppliers": sorted(pl["suppliers"])} for pl in plans.values()],
+            "terms_differ": len(plans) > 1}
+
+
+def hotel_offers(tid: str, nights: int = 3, board: str = "", refundable: str = "", payment: str = "", supplier: str = "",
+                 compare: str = "group") -> dict:
+    """compare="group": suppliers compete inside a comparable group (room x board x refundability); rows show each
+    offer's own rate plan. compare="plan": competition only between identical rate plans (same cancellation deadline
+    and payment method too), one recommendation per plan."""
+    if compare not in ("group", "plan"):
+        raise ApiError(422, "invalid_value", "compare must be 'group' or 'plan'.", {"field": "compare"})
     h = DEMO.hotels.get(tid)
     if h is None:
         raise ApiError(404, "not_found", f"Property {tid} does not exist.")
@@ -99,16 +133,18 @@ def hotel_offers(tid: str, nights: int = 3, board: str = "", refundable: str = "
                     and (not payment or o.get("payment") == payment) and (not supplier or o["supplier"] == supplier)]
             if not offs:
                 continue
-            sel = select(offs)
             n_offers += len(offs)
-            n_groups += 1
-            win = sel["winner"]
-            groups.append({"label": s["label"], "board": s["board"], "board_label": BOARD.get(s["board"], s["board"]),
-                           "refundable": s["refundable"],
-                           "recommended": _hotel_row(win, win, sel["cheapest"], nights) if win else None,
-                           "reasons": sel["reasons"],
-                           "offers": [_hotel_row(o, win, sel["cheapest"], nights) for o in sel["rows"]],
-                           "terms_differ": len({(o.get("cancel_hours"), o.get("payment")) for o in offs}) > 1})
+            if compare == "group":
+                n_groups += 1
+                groups.append(_group(s["label"], s["board"], s["refundable"], offs, nights, "comparable"))
+            else:
+                by_plan: dict[tuple, list] = {}
+                for o in offs:
+                    by_plan.setdefault(off.rate_plan_key(o), []).append(o)
+                for key in sorted(by_plan, key=lambda k: (k[2] is None, -(k[2] or 0), k[3])):
+                    n_groups += 1
+                    po = by_plan[key]
+                    groups.append(_group(s["label"], s["board"], s["refundable"], po, nights, "identical", off.rate_plan_label(po[0])))
         if groups:
             ident = g["ident"]
             rooms_out.append({"room_id": f"{tid}-R{gi:02d}", "name": g["name"], "tier": g["tier"], "ambiguous": g.get("ambiguous", False),
@@ -118,7 +154,7 @@ def hotel_offers(tid: str, nights: int = 3, board: str = "", refundable: str = "
     return {"id": tid, "type": "hotel", "name": h["name"], "city": h["city"], "city_name": catalog.city_name(h["city"]),
             "nights": nights, "currency": "INR", "cap_pct": settings_svc.get("price_cap_pct"),
             "paused_suppliers": sorted(settings_svc.paused_suppliers()), "quoted_at": catalog.built_ts(),
-            "rates_loaded": bool(h.get("rooms")), "rooms": rooms_out, "n_offers": n_offers, "n_groups": n_groups,
+            "rates_loaded": bool(h.get("rooms")), "rooms": rooms_out, "n_offers": n_offers, "n_groups": n_groups, "compare": compare,
             "note": None if h.get("rooms") else "Rates are only generated for Dubai properties in the synthetic world."}
 
 
@@ -142,7 +178,7 @@ def activity_offers(pid: str, supplier: str = "") -> dict:
                          "title": u["title"], "duration": u["duration"], "duration_min": u.get("duration_min"),
                          "adult": u["prices"]["adult"], "child": u["prices"].get("child"), "infant": u["prices"].get("infant"),
                          "currency": "INR", "meeting_point": raw.get("meeting_point"), "inclusions": raw.get("inclusions"),
-                         "language": raw.get("language"), "cancellation": None, "availability": "quoted",
+                         "language": raw.get("language"), "cancellation": normalize._activity_cancellation(raw), "availability": "quoted",
                          "reliability": round(float(x["p_success"]), 4), "expected_value": round(float(x["ev"]), 1),
                          "premium_pct": round(x["premium_pct"], 2), "cheapest": x is sel["cheapest"], "eligible": x["eligible"],
                          "ineligible_reason": x["ineligible_reason"],
@@ -151,11 +187,12 @@ def activity_offers(pid: str, supplier: str = "") -> dict:
         options.append({"label": o["label"], "time_slot": k[0], "transfer": bool(k[1]), "meal": bool(k[2]), "private": bool(k[3]),
                         "language": k[4], "addons": list(k[5]) if len(k) > 5 else [], "suppliers": o["suppliers"],
                         "duration_range": [durations[0], durations[-1]] if durations else None,
+                        "duration_window": o.get("duration_window"), "cancellation": o.get("cancellation"),
                         "recommended": next((r for r in rows if r["status"] == "recommended"), None),
                         "reasons": sel["reasons"], "units": rows})
     return {"id": pid, "type": "activity", "name": p["label"], "attraction": p["attraction"], "access_tier": p["tier"],
             "currency": "INR", "cap_pct": settings_svc.get("price_cap_pct"), "quoted_at": catalog.built_ts(),
-            "price_basis": "Adult ticket price. Supplier feeds do not include cancellation terms for sightseeing.",
+            "price_basis": "Adult ticket price. Options never mix durations that cannot overlap; cancellation terms split options when a feed provides them (these synthetic feeds do not).",
             "options": options}
 
 

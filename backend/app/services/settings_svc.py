@@ -82,6 +82,9 @@ def update(key: str, value, user, reason: str | None = None) -> dict:
     if key == "alpha":
         from app.services import review
         review.sync_cases()
+    if key == "price_cap_pct":
+        from app.services import catalog
+        catalog.refresh_ranking_table()
     audit.record(user, "settings.updated", "setting", key, before={"value": before}, after={"value": value}, reason=reason)
     return all_settings()[key]
 
@@ -118,6 +121,9 @@ def set_supplier_config(code: str, status: str | None, notes: str | None, user, 
                   "updated_by = excluded.updated_by, updated_at = excluded.updated_at",
                   (code, new_status, new_notes, user.id, store.now()))
     after = supplier_config(code)
+    if before["status"] != after["status"]:
+        from app.services import catalog
+        catalog.refresh_ranking_table()
     audit.record(user, "supplier.config_updated", "supplier", code,
                  before={"status": before["status"], "notes": before["notes"]},
                  after={"status": after["status"], "notes": after["notes"]}, reason=reason)

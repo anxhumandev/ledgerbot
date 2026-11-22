@@ -466,8 +466,15 @@ def rebuild() -> dict:
     return {"applied_in_s": round(time.time() - t0, 2), "skipped": skipped}
 
 
+def refresh_ranking_table() -> None:
+    """Ranking features use the same lead offer the app shows: live reliability, the workspace price cap and paused suppliers."""
+    from app.services import settings_svc
+    DEMO.hotel_table = ranking.hotel_table({**DEMO.state, "recs": list(DEMO.rec_by_id.values())}, DEMO.p_success,
+                                           float(settings_svc.get("price_cap_pct")), frozenset(settings_svc.paused_suppliers()))
+
+
 def _after_change():
-    DEMO.hotel_table = ranking.hotel_table({**DEMO.state, "recs": list(DEMO.rec_by_id.values())})
+    refresh_ranking_table()
     try:
         from app.services.simulator import SIM
         SIM.prepare()

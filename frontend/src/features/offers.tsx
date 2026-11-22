@@ -25,7 +25,7 @@ export function HotelOffers({ data, compact }: { data: any; compact?: boolean })
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-fg-3">
-        <span>{data.n_offers} supplier offers in {data.n_groups} comparable groups</span>
+        <span>{data.n_offers} supplier offers in {data.n_groups} {data.compare === "plan" ? "identical rate plans" : "comparable groups"}</span>
         <span>Prices for {data.nights} night{data.nights > 1 ? "s" : ""}, 2 adults, {data.currency}</span>
         <span>Quoted {dateTime(data.quoted_at)} · feeds carry quotes, not live availability or taxes</span>
         <span>Competitiveness cap {data.cap_pct}%</span>
@@ -51,8 +51,8 @@ export function HotelOffers({ data, compact }: { data: any; compact?: boolean })
                     <button onClick={() => setOpen({ ...open, [key]: !isOpen })} aria-expanded={isOpen}
                       className="mt-0.5 flex items-center gap-1.5 text-[13px] font-semibold text-fg hover:text-brand-ink">
                       {isOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-                      {g.board_label} · {g.refundable ? "Refundable" : "Non-refundable"}
-                      <span className="font-normal text-fg-3">({g.offers.length} offer{g.offers.length > 1 ? "s" : ""})</span>
+                      {g.kind === "identical" ? <span className="first-letter:uppercase">{g.plan_label}</span> : <>{g.board_label} · {g.refundable ? "Refundable" : "Non-refundable"}</>}
+                      <span className="font-normal text-fg-3">({g.offers.length} offer{g.offers.length > 1 ? "s" : ""}{g.kind === "comparable" && g.rate_plans.length > 1 ? ` · ${g.rate_plans.length} rate plans` : ""})</span>
                     </button>
                     {rec ? (
                       <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px]">
@@ -65,7 +65,7 @@ export function HotelOffers({ data, compact }: { data: any; compact?: boolean })
                     ) : <span className="ml-auto text-[12px] text-bad">No eligible offer</span>}
                   </div>
                   {rec && <div className="pl-6"><Reasons reasons={g.reasons} /></div>}
-                  {g.terms_differ && isOpen && <p className="mt-1.5 pl-6 text-[12px] text-fg-3">Cancellation deadlines or payment terms differ between suppliers in this group; each row shows its own terms.</p>}
+                  {g.kind === "comparable" && g.terms_differ && isOpen && <p className="mt-1.5 pl-6 text-[12px] text-fg-3">Comparable group with {g.rate_plans.length} different rate plans (cancellation deadline or payment differ). Each row shows its own plan; compare by identical rate plan to see only like-for-like substitutes.</p>}
                   {isOpen && (
                     <div className="mt-2 overflow-x-auto pl-6 scroll-thin">
                       <table className="w-full min-w-[900px] text-[13px]">
@@ -82,7 +82,7 @@ export function HotelOffers({ data, compact }: { data: any; compact?: boolean })
                               <td className="py-2 pr-3"><SupplierChip code={o.supplier} name={o.supplier_name} /></td>
                               <td className="max-w-[220px] truncate py-2 pr-3 font-mono text-[12px] text-fg-3" title={`${o.supplier_room_name} · ${o.board_raw ?? ""} · ${o.cancellation_raw ?? ""}`}>{o.rate_text}</td>
                               <td className="py-2 pr-3">{BOARD[o.board] ?? o.board}</td>
-                              <td className="py-2 pr-3"><Cancellation o={o} /></td>
+                              <td className="py-2 pr-3"><Cancellation o={o} />{g.kind === "comparable" && g.rate_plans.length > 1 && <div className="font-mono text-[10px] text-fg-3" title={o.rate_plan_label}>{o.rate_plan_id}</div>}</td>
                               <td className="py-2 pr-3">{o.payment === "pay_later" ? "Pay later" : "Prepay"}</td>
                               <td className="num py-2 pr-3 text-right font-semibold text-fg">{inr(o.total)}</td>
                               <td className="num py-2 pr-3 text-right">{o.cheapest ? <Badge tone="ok">Cheapest</Badge> : `+${o.premium_pct.toFixed(1)}%`}</td>
@@ -121,7 +121,8 @@ export function ActivityOffers({ data }: { data: any }) {
             <Badge tone={o.transfer ? "ok" : "neutral"}>{o.transfer ? "Hotel transfer" : "No transfer"}</Badge>
             <Badge tone={o.meal ? "ok" : "neutral"}>{o.meal ? "Meal included" : "No meal"}</Badge>
             {o.language !== "EN" && <Badge tone="warn">{o.language} guide</Badge>}
-            {o.duration_range && <span className="text-[12px] text-fg-3">{duration(o.duration_range[0])}{o.duration_range[1] !== o.duration_range[0] ? `–${duration(o.duration_range[1])}` : ""}</span>}
+            {o.duration_range && <span className="text-[12px] text-fg-3" title={o.duration_window ? `Listings agree on a duration between ${duration(o.duration_window[0])} and ${duration(o.duration_window[1])}` : undefined}>{duration(o.duration_range[0])}{o.duration_range[1] !== o.duration_range[0] ? `–${duration(o.duration_range[1])}` : ""}</span>}
+            {o.cancellation && <Badge tone={o.cancellation.refundable ? "ok" : "neutral"}>{o.cancellation.refundable ? `Free cancellation ${o.cancellation.free_cancel_hours} h` : "Non-refundable"}</Badge>}
           </div>
           {o.recommended && (
             <div className="flex flex-wrap items-center gap-3 border-b border-edge px-4 py-2.5 text-[13px]">
@@ -150,7 +151,7 @@ export function ActivityOffers({ data }: { data: any }) {
                     <td className="max-w-[160px] truncate py-2 pr-3" title={u.meeting_point ?? ""}>{u.meeting_point ?? "—"}</td>
                     <td className="num py-2 pr-3 text-right font-semibold text-fg">{inr(u.adult)}</td>
                     <td className="num py-2 pr-3 text-right">{u.child ? inr(u.child) : "—"}</td>
-                    <td className="py-2 pr-3 text-fg-3">Not in feed</td>
+                    <td className="py-2 pr-3 text-fg-3">{u.cancellation ? (u.cancellation.refundable ? `Free ${u.cancellation.free_cancel_hours} h` : "Non-refundable") : "Not in feed"}</td>
                     <td className="num py-2 pr-3 text-right">{pct(u.reliability, 1)}</td>
                     <td className="py-2 pr-4"><StatusBadge status={u.status} />{u.ineligible_reason && <div className="text-[11px] text-bad">{u.ineligible_reason}</div>}</td>
                   </tr>

@@ -30,6 +30,8 @@ def _init_workspace():
     if catalog.has_mutations():
         res = catalog.rebuild()
         print(f"Replayed catalog changes in {res['applied_in_s']}s; skipped {len(res['skipped'])}")
+    else:
+        catalog.refresh_ranking_table()
     review.sync_cases()
     ingestion.recover_interrupted()
     if not store.one("SELECT 1 AS x FROM audit_events LIMIT 1"):

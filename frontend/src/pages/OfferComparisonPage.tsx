@@ -7,7 +7,7 @@ import { useApi, useDebounced, useUrlState } from "../lib/hooks";
 import { num } from "../lib/fmt";
 import { Badge, Button, Card, cx, Empty, ErrorState, Field, PageHeader, SearchInput, Segmented, Select, Skeleton, SupplierChip } from "../ui/core";
 
-const DEF = { type: "hotel", id: "", nights: "3", board: "", refundable: "", payment: "", supplier: "", view: "table" };
+const DEF = { type: "hotel", id: "", nights: "3", board: "", refundable: "", payment: "", supplier: "", view: "table", compare: "group" };
 
 export default function OfferComparisonPage() {
   const [s, set] = useUrlState(DEF);
@@ -16,7 +16,7 @@ export default function OfferComparisonPage() {
   const results = useApi<any[]>(`/offers/search${qs({ type: s.type, q: dq, limit: 12 })}`);
   useEffect(() => { if (!s.id && results.data?.length) set({ id: results.data[0].id }, false); }, [results.data, s.id]);
   const path = s.id ? (s.type === "hotel"
-    ? `/offers/hotel/${s.id}${qs({ nights: s.nights, board: s.board, refundable: s.refundable, payment: s.payment, supplier: s.supplier })}`
+    ? `/offers/hotel/${s.id}${qs({ nights: s.nights, board: s.board, refundable: s.refundable, payment: s.payment, supplier: s.supplier, compare: s.compare })}`
     : `/offers/activity/${s.id}${qs({ supplier: s.supplier })}`) : null;
   const { data, error, isFetching, refetch } = useApi<any>(path);
   const api = useApi<any>(s.view === "api" && s.type === "hotel" && s.id ? `/v1/hotels/${s.id}/offers?nights=${s.nights}` : null);
@@ -56,9 +56,12 @@ export default function OfferComparisonPage() {
                   <option value="">Any</option><option value="yes">Free cancellation only</option><option value="no">Non-refundable only</option></Select></Field>
                 <Field label="Payment"><Select value={s.payment} onChange={(e) => set({ payment: e.target.value }, false)} className="w-full">
                   <option value="">Any</option><option value="prepay">Prepay</option><option value="pay_later">Pay later</option></Select></Field>
+                <Field label="Compare offers by" hint={s.compare === "plan" ? "Only identical rate plans compete: same meal plan, refundability, cancellation deadline and payment." : "Suppliers compete within the same room, meal plan and refundability; each row keeps its own deadline and payment terms."}>
+                  <Select value={s.compare} onChange={(e) => set({ compare: e.target.value }, false)} className="w-full">
+                    <option value="group">Comparable group</option><option value="plan">Identical rate plan</option></Select></Field>
                 <Field label="Supplier"><Select value={s.supplier} onChange={(e) => set({ supplier: e.target.value }, false)} className="w-full">
                   <option value="">All suppliers</option>{["S1", "S2", "S3", "S4", "S5", "S6"].map((c) => <option key={c} value={c}>{c}</option>)}</Select></Field>
-                <Button variant="ghost" size="sm" onClick={() => set({ board: "", refundable: "", payment: "", supplier: "", nights: "3" }, false)}>Reset requirements</Button>
+                <Button variant="ghost" size="sm" onClick={() => set({ board: "", refundable: "", payment: "", supplier: "", nights: "3", compare: "group" }, false)}>Reset requirements</Button>
               </div>
             </Card>
           )}

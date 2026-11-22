@@ -386,6 +386,35 @@ def parse_duration(text: str | None) -> int | None:
     return int(total) if total else None
 
 
+def _activity_cancellation(listing: dict) -> dict | None:
+    """Normalised cancellation terms when the feed provides them (field `cancellation` or `cancellation_policy`)."""
+    raw = listing.get("cancellation") or listing.get("cancellation_policy")
+    if not raw:
+        return None
+    refundable, hours = parse_cancellation(str(raw))
+    if refundable is None:
+        return None
+    return {"refundable": refundable, "free_cancel_hours": hours if refundable else 0}
+
+
+def duration_range(text: str | None) -> tuple[int, int] | None:
+    """Plausible duration interval in minutes. Precise durations ("4h", "240 minutes") get ±15% (at least ±30 min);
+    vague ones are wide: "half day" 3–6 h, "full day" 6–12 h. Two listings can be the same option only if their
+    intervals overlap, so "10h", "600 minutos" and "full day" agree while "2h" and "4h" do not."""
+    if not text:
+        return None
+    s = fold(text)
+    if "half day" in s or "medio dia" in s:
+        return (180, 360)
+    if "full day" in s or "dia completo" in s:
+        return (360, 720)
+    d = parse_duration(text)
+    if not d:
+        return None
+    tol = max(30, round(d * 0.15))
+    return (d - tol, d + tol)
+
+
 def parse_activity(listing: dict) -> dict:
     title = fold(listing.get("title", "")).replace("–", " ")
     t = " " + re.sub(r"[^a-z0-9+/ ]", " ", title) + " "
@@ -413,7 +442,8 @@ def parse_activity(listing: dict) -> dict:
     language = "ES" if (lang_raw in ("es", "spanish", "espanol") or "spanish" in t or "en espanol" in t or "es guide" in t) else "EN"
     addons = sorted([a for a, keys in {"quad": ["quad"], "edge": ["edge"]}.items() if any(k in t for k in keys)])
     return {"core_attraction": attraction, "access_tier": tier, "time_slot": slot,
-            "duration_min": parse_duration(listing.get("duration")), "transfer_included": transfer,
+            "duration_min": parse_duration(listing.get("duration")), "duration_range": duration_range(listing.get("duration")),
+            "cancellation": _activity_cancellation(listing), "transfer_included": transfer,
             "meal_included": meal, "private": private, "language": language, "addons": addons}
 
 
